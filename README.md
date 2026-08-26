@@ -18,7 +18,7 @@ The platform brings together core business functions into one place so that:
 - Employees and technicians can manage assigned service work
 - Admins can monitor operations and approve workflows
 - Management can view business performance and service trends
-- Quotations and invoices stay connected to the actual service lifecycle
+- Quotations and invoices stay connected to the actual service 
 
 This reduces the reliance on manual records, fragmented communication, and delayed follow-ups.
 

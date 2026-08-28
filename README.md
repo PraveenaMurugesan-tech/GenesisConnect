@@ -56,7 +56,7 @@ The repository is currently at an early documentation and planning stage. It con
 This means the README must clearly distinguish:
 
 - Implemented in the repository: documentation and planning materials
-- Planned or future implementation: application features, architecture, and system modules
+- Planned or future implementation: application features, architecture, and system 
 
 ## 6. Implemented Features
 

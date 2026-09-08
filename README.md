@@ -31,7 +31,7 @@ Most operational challenges in service-driven businesses come from manual and fr
 - Quotation and invoice records are not always aligned with the actual service performed.
 - There is no unified source of truth for customer, service, and business history.
 - Communication between the customer, admin, and technician teams is inconsistent.
-- Managers struggle to monitor workload, completion status, and business performance.
+- Managers struggle to monitor workload, completion status, and performance.
 - Manual workflows slow down operations and create accountability .
 
 GenesisConnect is designed to solve these problems by digitizing and centralizing the workflow.

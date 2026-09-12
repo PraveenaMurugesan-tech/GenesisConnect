@@ -14,7 +14,7 @@ GenesisConnect is intended to serve as a digital business platform for a company
 
 The platform brings together core business functions into one place so that:
 
-- Customers can submit requests and track updates
+- Customers can submit requests
 - Employees and technicians can manage assigned service work
 - Admins can monitor operations and approve workflows
 - Management can view business performance and service trends

@@ -136,7 +136,7 @@ The platform described by GenesisConnect includes several major areas of functio
 - Email reminders
 - SMS or WhatsApp notifications
 - Service update alerts
-- Payment and follow-up reminders
+- Payment and reminders
 
 ### 7.11 Analytics
 - Service volume trends

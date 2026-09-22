@@ -1,5 +1,5 @@
 import React from "react";
-import { Settings, ShieldCheck, Key, Database, Shield } from "lucide-react";
+import { ShieldCheck, Key, Database, Shield } from "lucide-react";
 import { Badge } from "../../components/common/Badge";
 import { Card, CardContent } from "../../components/ui/Card";
 

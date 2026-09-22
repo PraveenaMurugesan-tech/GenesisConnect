@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { Zap, CheckCircle2, ShieldCheck, HelpCircle } from "lucide-react";
 import { Container } from "../components/common/Container";
 import { SectionHeader } from "../components/common/SectionHeader";
-import { Badge } from "../components/common/Badge";
 import { Input } from "../components/ui/Input";
 import { Select } from "../components/ui/Select";
 import { Textarea } from "../components/ui/Textarea";

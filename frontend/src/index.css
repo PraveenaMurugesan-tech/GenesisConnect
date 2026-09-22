@@ -1,0 +1,27 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+  
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-slate-950 text-slate-100;
+  }
+}
+
+@layer utilities {
+  .glass-card {
+    @apply bg-slate-900/70 backdrop-blur-md border border-slate-800/80 shadow-xl;
+  }
+  
+  .glass-card-hover {
+    @apply transition-all duration-300 hover:border-amber-500/50 hover:shadow-amber-500/10 hover:shadow-2xl hover:-translate-y-0.5;
+  }
+}

@@ -4,24 +4,94 @@
 
 @layer base {
   :root {
-    color-scheme: dark;
+    --color-primary: #0f2137;
+    --color-secondary: #0284c7;
+    --color-accent: #d97706;
+    --color-bg: #f8fafc;
+    --color-surface: #ffffff;
+    --color-text-primary: #0f172a;
+    --color-text-secondary: #334155;
+    --color-text-muted: #64748b;
+    --color-border: #e2e8f0;
   }
-  
+
   html {
     scroll-behavior: smooth;
+    color-scheme: light;
   }
 
   body {
-    @apply bg-slate-950 text-slate-100;
+    @apply bg-slate-50 text-slate-900 font-sans antialiased min-h-screen selection:bg-amber-500 selection:text-white;
+  }
+
+  /* Accessible focus defaults */
+  :focus-visible {
+    @apply outline-none ring-2 ring-sky-600 ring-offset-2 ring-offset-white;
   }
 }
 
-@layer utilities {
-  .glass-card {
-    @apply bg-slate-900/70 backdrop-blur-md border border-slate-800/80 shadow-xl;
+@layer components {
+  /* Typography System */
+  .heading-display {
+    @apply font-heading text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-slate-900 leading-tight;
   }
-  
-  .glass-card-hover {
-    @apply transition-all duration-300 hover:border-amber-500/50 hover:shadow-amber-500/10 hover:shadow-2xl hover:-translate-y-0.5;
+
+  .heading-h1 {
+    @apply font-heading text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-slate-900 leading-snug;
+  }
+
+  .heading-h2 {
+    @apply font-heading text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 leading-snug;
+  }
+
+  .heading-h3 {
+    @apply font-heading text-xl sm:text-2xl font-semibold tracking-tight text-slate-900 leading-normal;
+  }
+
+  .body-large {
+    @apply text-lg sm:text-xl text-slate-600 leading-relaxed;
+  }
+
+  .body-base {
+    @apply text-base text-slate-700 leading-relaxed;
+  }
+
+  .text-small {
+    @apply text-sm text-slate-600 leading-normal;
+  }
+
+  .text-caption {
+    @apply text-xs text-slate-500 tracking-wide;
+  }
+
+  .text-nav {
+    @apply text-sm font-medium tracking-normal;
+  }
+
+  .text-btn {
+    @apply text-sm font-semibold tracking-wide;
+  }
+
+  /* Industrial Card System */
+  .card-industrial {
+    @apply bg-white rounded-xl border border-slate-200/80 shadow-industrial transition-all duration-200;
+  }
+
+  .card-industrial-hover {
+    @apply card-industrial hover:border-slate-300 hover:shadow-industrial-md hover:-translate-y-0.5;
+  }
+
+  .card-industrial-interactive {
+    @apply card-industrial hover:border-sky-500/50 hover:shadow-industrial-md hover:-translate-y-0.5 cursor-pointer;
+  }
+
+  /* Industrial Container */
+  .container-industrial {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+
+  /* Industrial Badges & Section Accents */
+  .badge-industrial {
+    @apply inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider;
   }
 }

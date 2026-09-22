@@ -30,6 +30,17 @@ export const ADMIN_MENU_ITEMS = [
 export const AdminSidebar: React.FC<AdminSidebarProps> = ({ isOpen, onClose }) => {
   const navigate = useNavigate();
 
+  // Close sidebar on Escape key press
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && isOpen) {
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, onClose]);
+
   const handleLogout = () => {
     localStorage.removeItem("genesis_access_token");
     navigate("/admin/login");
@@ -98,8 +109,13 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({ isOpen, onClose }) =
                   }`
                 }
               >
-                <Icon className="w-4 h-4" />
-                <span>{item.name}</span>
+                {({ isActive }) => (
+                  <>
+                    <Icon className="w-4 h-4" aria-hidden="true" />
+                    <span>{item.name}</span>
+                    {isActive && <span className="sr-only">(current page)</span>}
+                  </>
+                )}
               </NavLink>
             );
           })}

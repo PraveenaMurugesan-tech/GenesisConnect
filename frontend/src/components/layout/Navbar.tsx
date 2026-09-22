@@ -134,6 +134,7 @@ export const Navbar: React.FC = () => {
                 key={item.path}
                 to={item.path}
                 end={item.path === "/"}
+                aria-current={location.pathname === item.path ? "page" : undefined}
                 className={({ isActive }) =>
                   `px-3.5 py-2 rounded-lg text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 ${
                     isActive
@@ -204,6 +205,7 @@ export const Navbar: React.FC = () => {
                   key={item.path}
                   to={item.path}
                   end={item.path === "/"}
+                  aria-current={location.pathname === item.path ? "page" : undefined}
                   onClick={() => setMobileMenuOpen(false)}
                   className={({ isActive }) =>
                     `flex items-center justify-between px-4 py-3 rounded-lg text-base font-medium transition-colors ${

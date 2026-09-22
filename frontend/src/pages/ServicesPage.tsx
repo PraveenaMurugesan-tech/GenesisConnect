@@ -1,90 +1,119 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { Link } from "react-router-dom";
-import { Wrench, Shield, Clock, ArrowRight } from "lucide-react";
-import apiClient from "../services/api";
-import { Service } from "../types";
+import {
+  Wrench,
+  Activity,
+  CheckCircle,
+  Clock,
+  Shield,
+  ArrowRight,
+  Headphones,
+} from "lucide-react";
+import { Container } from "../components/common/Container";
+import { SectionHeader } from "../components/common/SectionHeader";
+import { Badge } from "../components/common/Badge";
+import { Button } from "../components/ui/Button";
+import { Card, CardContent } from "../components/ui/Card";
 
 export const ServicesPage: React.FC = () => {
-  const [services, setServices] = useState<Service[]>([]);
-
-  useEffect(() => {
-    apiClient
-      .get<Service[]>("/services")
-      .then((res) => setServices(res.data))
-      .catch((err) => {
-        console.warn("API not reachable yet; using Phase 0 services preview", err);
-        setServices([
-          {
-            id: 1,
-            title: "Annual Maintenance Contracts (AMC) & Preventive Care",
-            slug: "amc-and-preventive-care",
-            description:
-              "Comprehensive periodic inspection, oil and filter replacements, electrical calibration, and guaranteed priority breakdown response.",
-            is_active: true,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          },
-          {
-            id: 2,
-            title: "Turnkey Power Plant Installation & Commissioning",
-            slug: "turnkey-installation-commissioning",
-            description:
-              "Complete civil foundation design, acoustic ventilation ducting, exhaust piping, synchronization panels, and regulatory approvals.",
-            is_active: true,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          },
-          {
-            id: 3,
-            title: "Major Overhauling & Engine Rebuilding",
-            slug: "major-overhauling-engine-rebuilding",
-            description:
-              "Precision workshop overhauling of diesel engines, alternator rewinding, turbocharger servicing, and dynamometer load testing.",
-            is_active: true,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          },
-        ]);
-      });
-  }, []);
-
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-8 py-16">
-      <div className="max-w-3xl mb-12 space-y-4">
-        <span className="text-amber-400 font-semibold text-xs uppercase tracking-widest">
-          Route Foundation: /services
-        </span>
-        <h1 className="text-3xl sm:text-5xl font-bold text-white tracking-tight">
-          Engineering & Lifecycle Power Services
-        </h1>
-        <p className="text-slate-400 text-sm leading-relaxed">
-          From preventative AMC maintenance to round-the-clock emergency support, Genesis Power Equipments delivers complete lifecycle care for industrial generator installations.
-        </p>
-      </div>
+    <div className="py-12 sm:py-16 space-y-16">
+      <Container size="lg">
+        <SectionHeader
+          badge="Engineering Services"
+          title="Turnkey Industrial Maintenance & Engineering"
+          subtitle="Comprehensive maintenance contracts, load bank diagnostic testing, emergency breakdown response, and plant overhaul services."
+          className="mb-12"
+        />
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        {services.map((service) => (
-          <div key={service.id} className="glass-card rounded-2xl p-6 border border-slate-800 flex flex-col justify-between">
-            <div className="space-y-4">
-              <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
-                <Wrench className="w-5 h-5 text-amber-400" />
+        {/* Services Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <Card hover>
+            <CardContent className="p-8 space-y-4">
+              <div className="w-12 h-12 rounded-xl bg-slate-900 text-amber-400 flex items-center justify-center">
+                <Wrench className="w-6 h-6" />
               </div>
-              <h3 className="text-lg font-bold text-white leading-snug">{service.title}</h3>
-              <p className="text-xs text-slate-400 leading-relaxed">{service.description}</p>
-            </div>
+              <h3 className="font-heading text-lg font-bold text-slate-900">
+                Annual Maintenance Contracts (AMC)
+              </h3>
+              <p className="text-sm text-slate-600 leading-relaxed">
+                Comprehensive and non-comprehensive AMC agreements with scheduled preventive service visits, fluid analysis, filter replacements, and priority 24/7 breakdown coverage.
+              </p>
+              <div className="pt-2 flex items-center gap-2 text-xs font-semibold text-slate-700">
+                <CheckCircle className="w-4 h-4 text-emerald-600" />
+                <span>Standard & Comprehensive Tiers</span>
+              </div>
+            </CardContent>
+          </Card>
 
-            <div className="pt-6 mt-6 border-t border-slate-800 flex items-center justify-between">
-              <Link
-                to="/request-quote"
-                className="text-xs font-semibold text-amber-400 hover:text-amber-300 flex items-center gap-1"
-              >
-                Inquire for AMC / Service
-                <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
+          <Card hover>
+            <CardContent className="p-8 space-y-4">
+              <div className="w-12 h-12 rounded-xl bg-slate-900 text-amber-400 flex items-center justify-center">
+                <Activity className="w-6 h-6" />
+              </div>
+              <h3 className="font-heading text-lg font-bold text-slate-900">
+                On-Site Load Bank Diagnostic Testing
+              </h3>
+              <p className="text-sm text-slate-600 leading-relaxed">
+                Mobile resistive and reactive load testing up to 2000 kVA to verify generator performance, prevent wet stacking, and ensure emergency backup reliability under full load.
+              </p>
+              <div className="pt-2 flex items-center gap-2 text-xs font-semibold text-slate-700">
+                <CheckCircle className="w-4 h-4 text-emerald-600" />
+                <span>Certified Test Reports Provided</span>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card hover>
+            <CardContent className="p-8 space-y-4">
+              <div className="w-12 h-12 rounded-xl bg-slate-900 text-amber-400 flex items-center justify-center">
+                <Clock className="w-6 h-6" />
+              </div>
+              <h3 className="font-heading text-lg font-bold text-slate-900">
+                Emergency Breakdown Response
+              </h3>
+              <p className="text-sm text-slate-600 leading-relaxed">
+                Rapid-deployment field service engineers equipped with diagnostic equipment and genuine OEM spare parts to minimize unplanned industrial downtime.
+              </p>
+              <div className="pt-2 flex items-center gap-2 text-xs font-semibold text-slate-700">
+                <Shield className="w-4 h-4 text-sky-600" />
+                <span>24/7 Dedicated Support Desk</span>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Phase 1 Routing Status */}
+        <div className="mt-12 bg-white rounded-2xl border border-slate-200 p-8 shadow-industrial flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <Badge variant="accent">Phase 1 Route Foundation</Badge>
+              <span className="text-xs text-slate-500 font-mono">/services</span>
             </div>
+            <h4 className="font-heading text-lg font-bold text-slate-900">
+              Need to schedule a service inspection or AMC quote?
+            </h4>
+            <p className="text-sm text-slate-600 max-w-xl">
+              In Phase 2, this section will include full service packages, AMC request forms, and service agreement calculator tools.
+            </p>
           </div>
-        ))}
-      </div>
+
+          <div className="flex flex-wrap gap-3">
+            <Link to="/contact">
+              <Button variant="primary" size="md" leftIcon={<Headphones className="w-4 h-4" />}>
+                Contact Service Desk
+              </Button>
+            </Link>
+            <Link to="/request-quote">
+              <Button variant="outline" size="md" rightIcon={<ArrowRight className="w-4 h-4" />}>
+                Request AMC Pricing
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </Container>
     </div>
   );
 };
+
+export default ServicesPage;

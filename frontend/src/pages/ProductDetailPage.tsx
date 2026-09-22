@@ -1,170 +1,167 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { useParams, Link } from "react-router-dom";
-import { Package, Download, ChevronRight, FileText, ArrowLeft, CheckCircle } from "lucide-react";
-import apiClient from "../services/api";
-import { Product } from "../types";
+import {
+  ArrowLeft,
+  Zap,
+  FileText,
+  ShieldCheck,
+  ChevronRight,
+  Download,
+  Info,
+} from "lucide-react";
+import { Container } from "../components/common/Container";
+import { Badge } from "../components/common/Badge";
+import { Button } from "../components/ui/Button";
+import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/Card";
 
 export const ProductDetailPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
-  const [product, setProduct] = useState<Product | null>(null);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (!slug) return;
-    apiClient
-      .get<Product>(`/products/${slug}`)
-      .then((res) => {
-        setProduct(res.data);
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.warn("Could not fetch product detail from API; using preview placeholder", err);
-        setProduct({
-          id: 1,
-          name: "Industrial Silent Diesel Generator 250 kVA",
-          slug: slug || "silent-diesel-generator-250-kva",
-          category: "Diesel Generators",
-          description:
-            "Heavy-duty acoustic enclosed silent diesel generator engineered for continuous industrial manufacturing, hospitals, and critical infrastructure.",
-          features: [
-            "Acoustic weatherproof canopy with < 70 dBA at 1m",
-            "Electronic speed governing with fast load acceptance",
-            "Digital auto-start controller with AMF function",
-            "High fuel efficiency Cummins/Perkins engine configuration",
-          ],
-          specifications: {
-            "Prime Power Rating": "250 kVA / 200 kW",
-            "Standby Power Rating": "275 kVA / 220 kW",
-            "Voltage": "415 V, 3 Phase, 50 Hz",
-            "Power Factor": "0.8 Lagging",
-            "Fuel Tank Capacity": "450 Litres",
-          },
-          image_url: "https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=800&q=80",
-          datasheet_url: "https://example.com/datasheets/genesis-250kva.pdf",
-          is_active: true,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        });
-        setLoading(false);
-      });
-  }, [slug]);
-
-  if (loading) {
-    return <div className="max-w-7xl mx-auto p-12 text-center text-slate-500">Loading product specifications...</div>;
-  }
-
-  if (!product) {
-    return <div className="max-w-7xl mx-auto p-12 text-center text-slate-400">Product not found.</div>;
-  }
+  // Human-readable title from slug for placeholder demonstration
+  const formattedTitle = slug
+    ? slug
+        .split("-")
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(" ")
+    : "Industrial Power Equipment";
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-8 py-16">
-      {/* Breadcrumb Navigation */}
-      <div className="flex items-center gap-2 text-xs text-slate-400 mb-8">
-        <Link to="/" className="hover:text-white">Home</Link>
-        <ChevronRight className="w-3.5 h-3.5" />
-        <Link to="/products" className="hover:text-white">Products</Link>
-        <ChevronRight className="w-3.5 h-3.5" />
-        <span className="text-amber-400 font-medium truncate">{product.name}</span>
-      </div>
+    <div className="py-12 sm:py-16 space-y-10">
+      <Container size="lg">
+        {/* Breadcrumb Navigation */}
+        <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-xs text-slate-500 mb-6">
+          <Link to="/" className="hover:text-slate-800 transition-colors">Home</Link>
+          <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+          <Link to="/products" className="hover:text-slate-800 transition-colors">Products</Link>
+          <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+          <span className="text-slate-800 font-semibold truncate max-w-xs sm:max-w-md">
+            {formattedTitle}
+          </span>
+        </nav>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
-        {/* Left Column: Image & Media */}
-        <div className="lg:col-span-5 space-y-6">
-          <div className="aspect-video bg-slate-900 rounded-2xl border border-slate-800 flex items-center justify-center overflow-hidden">
-            {product.image_url ? (
-              <img
-                src={product.image_url}
-                alt={product.name}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <Package className="w-16 h-16 text-slate-700" />
-            )}
-          </div>
-
-          <div className="p-4 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <FileText className="w-5 h-5 text-amber-500" />
-              <div>
-                <div className="text-xs font-semibold text-white">Technical Datasheet (PDF)</div>
-                <div className="text-[10px] text-slate-400">Engineering drawings & specs</div>
-              </div>
-            </div>
-            <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 text-xs text-amber-400 hover:bg-slate-700">
-              <Download className="w-3.5 h-3.5" />
-              PDF
-            </button>
-          </div>
-        </div>
-
-        {/* Right Column: Specifications & CTA */}
-        <div className="lg:col-span-7 space-y-6">
+        {/* Phase 1 Route Architecture Notice */}
+        <div className="p-4 rounded-xl bg-sky-50 border border-sky-200 flex items-start gap-3 text-xs text-sky-900 mb-8">
+          <Info className="w-5 h-5 text-sky-700 flex-shrink-0 mt-0.5" />
           <div>
-            <span className="text-xs px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-400 font-semibold border border-amber-500/20">
-              {product.category}
-            </span>
-            <h1 className="text-2xl sm:text-4xl font-bold text-white mt-3">{product.name}</h1>
-            <p className="text-slate-400 text-sm mt-3 leading-relaxed">{product.description}</p>
-          </div>
-
-          {/* Key Features */}
-          {product.features && (
-            <div className="space-y-3">
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-300">
-                Key Features & Engineering Highlights
-              </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {product.features.map((feat, i) => (
-                  <div key={i} className="flex items-center gap-2 text-xs text-slate-300 bg-slate-900/80 p-2.5 rounded-lg border border-slate-800">
-                    <CheckCircle className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-                    <span>{feat}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Technical Specifications Table */}
-          {product.specifications && (
-            <div className="space-y-3">
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-300">
-                Technical Specifications
-              </h3>
-              <div className="border border-slate-800 rounded-xl overflow-hidden text-xs">
-                {Object.entries(product.specifications).map(([key, val], idx) => (
-                  <div
-                    key={key}
-                    className={`flex justify-between p-3 ${
-                      idx % 2 === 0 ? "bg-slate-900/50" : "bg-slate-900/90"
-                    }`}
-                  >
-                    <span className="text-slate-400 font-medium">{key}</span>
-                    <span className="text-white font-semibold">{String(val)}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Quotation CTA */}
-          <div className="pt-4 flex items-center gap-4">
-            <Link
-              to={`/request-quote?product_id=${product.id}&product_name=${encodeURIComponent(product.name)}`}
-              className="px-6 py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-sm shadow-lg shadow-amber-500/20"
-            >
-              Request Quote for this Model
-            </Link>
-            <Link
-              to="/products"
-              className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-white"
-            >
-              <ArrowLeft className="w-3.5 h-3.5" />
-              Back to Catalog
-            </Link>
+            <span className="font-bold">Route Architecture Verified:</span>
+            {" "}You are viewing route <code className="font-mono bg-sky-100 px-1 py-0.5 rounded text-sky-800">/products/:slug</code> with parameter <code className="font-mono bg-sky-100 px-1 py-0.5 rounded text-sky-800">{slug || "unknown"}</code>. In Phase 2, this view will dynamically fetch the product model from PostgreSQL and render high-resolution technical diagrams and downloadable PDF datasheets.
           </div>
         </div>
-      </div>
+
+        {/* Product Overview Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+          {/* Main Specs & Information */}
+          <div className="lg:col-span-8 space-y-8">
+            <div className="space-y-4">
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge variant="secondary">Industrial DG Set</Badge>
+                <Badge variant="accent">CPCB-II Compliant</Badge>
+                <Badge variant="outline">Slug: {slug}</Badge>
+              </div>
+
+              <h1 className="font-heading text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
+                {formattedTitle}
+              </h1>
+
+              <p className="text-base text-slate-600 leading-relaxed">
+                Industrial grade continuous-power diesel generating system engineered for mission-critical manufacturing facilities, healthcare complexes, and commercial installations.
+              </p>
+            </div>
+
+            {/* Technical Specifications Table */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <FileText className="w-4 h-4 text-sky-700" />
+                  Engineering Specifications (Foundation Schema)
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                <table className="w-full text-left text-sm">
+                  <tbody className="divide-y divide-slate-100">
+                    <tr className="hover:bg-slate-50">
+                      <td className="px-6 py-3.5 font-medium text-slate-500 w-1/3">Standby Power Rating</td>
+                      <td className="px-6 py-3.5 font-semibold text-slate-800">500 kVA / 400 kWe</td>
+                    </tr>
+                    <tr className="hover:bg-slate-50">
+                      <td className="px-6 py-3.5 font-medium text-slate-500">Prime Power Rating</td>
+                      <td className="px-6 py-3.5 font-semibold text-slate-800">450 kVA / 360 kWe</td>
+                    </tr>
+                    <tr className="hover:bg-slate-50">
+                      <td className="px-6 py-3.5 font-medium text-slate-500">Voltage & Frequency</td>
+                      <td className="px-6 py-3.5 font-semibold text-slate-800">415 Volts, 50 Hz, 3 Phase, 0.8 PF</td>
+                    </tr>
+                    <tr className="hover:bg-slate-50">
+                      <td className="px-6 py-3.5 font-medium text-slate-500">Engine Governor</td>
+                      <td className="px-6 py-3.5 font-semibold text-slate-800">Electronic Governor (Class A1)</td>
+                    </tr>
+                    <tr className="hover:bg-slate-50">
+                      <td className="px-6 py-3.5 font-medium text-slate-500">Cooling System</td>
+                      <td className="px-6 py-3.5 font-semibold text-slate-800">Water Cooled, Heavy-Duty Radiator (50°C ambient)</td>
+                    </tr>
+                    <tr className="hover:bg-slate-50">
+                      <td className="px-6 py-3.5 font-medium text-slate-500">Acoustic Sound Level</td>
+                      <td className="px-6 py-3.5 font-semibold text-slate-800">&lt; 75 dBA at 1 meter (CPCB-II Certified)</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </CardContent>
+            </Card>
+
+            <div className="flex flex-wrap items-center gap-4">
+              <Link to="/products">
+                <Button variant="outline" size="md" leftIcon={<ArrowLeft className="w-4 h-4" />}>
+                  Back to All Products
+                </Button>
+              </Link>
+            </div>
+          </div>
+
+          {/* Sidebar Action Card */}
+          <div className="lg:col-span-4 space-y-6">
+            <div className="bg-white p-6 sm:p-8 rounded-2xl border border-slate-200 shadow-industrial space-y-6">
+              <div className="space-y-2">
+                <h3 className="font-heading text-lg font-bold text-slate-900">
+                  Request Equipment Pricing
+                </h3>
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  Genesis provides direct OEM pricing, installation drawings, and technical consultation for this equipment.
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                <Link to="/request-quote" className="block">
+                  <Button variant="accent" size="lg" fullWidth leftIcon={<Zap className="w-4 h-4" />}>
+                    Request Quotation
+                  </Button>
+                </Link>
+
+                <Button
+                  variant="outline"
+                  size="md"
+                  fullWidth
+                  leftIcon={<Download className="w-4 h-4" />}
+                  onClick={() => alert("Datasheet downloads will be connected in Phase 2 via Supabase storage.")}
+                >
+                  Download Datasheet (PDF)
+                </Button>
+              </div>
+
+              <div className="border-t border-slate-100 pt-4 text-xs text-slate-500 space-y-2">
+                <div className="flex items-center gap-2 text-slate-700 font-semibold">
+                  <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                  <span>Warranty & Support</span>
+                </div>
+                <p>
+                  Includes 24 months OEM warranty, on-site commissioning by certified engineers, and 24/7 technical hotline access.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Container>
     </div>
   );
 };
+
+export default ProductDetailPage;

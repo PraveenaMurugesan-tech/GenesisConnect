@@ -1,141 +1,155 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { Package, ArrowRight, Filter, Search, Download } from "lucide-react";
-import apiClient from "../services/api";
-import { Product } from "../types";
+import { Zap, ShieldCheck, ChevronRight, Filter } from "lucide-react";
+import { Container } from "../components/common/Container";
+import { SectionHeader } from "../components/common/SectionHeader";
+import { Badge } from "../components/common/Badge";
+import { Button } from "../components/ui/Button";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "../components/ui/Card";
+
+export interface MockProduct {
+  id: number;
+  name: string;
+  slug: string;
+  category: string;
+  powerRating: string;
+  engineBrand: string;
+  phase: string;
+  description: string;
+}
+
+const SAMPLE_PRODUCTS: MockProduct[] = [
+  {
+    id: 1,
+    name: "Genesis Prime 500 kVA Heavy Industrial DG Set",
+    slug: "genesis-prime-500kva-dg-set",
+    category: "Diesel Generators",
+    powerRating: "500 kVA / 400 kWe",
+    engineBrand: "Heavy Duty Multi-Cylinder Turbocharged",
+    phase: "3-Phase, 415V, 50 Hz",
+    description: "Designed for continuous heavy manufacturing plants, hospitals, and critical data backup.",
+  },
+  {
+    id: 2,
+    name: "Genesis Silent Acoustic 250 kVA Generator",
+    slug: "genesis-silent-acoustic-250kva-generator",
+    category: "Acoustic Enclosures",
+    powerRating: "250 kVA / 200 kWe",
+    engineBrand: "Electronic Governor Industrial Diesel",
+    phase: "3-Phase, 415V, 50 Hz",
+    description: "Sound-attenuated weatherproof enclosure rated < 75 dBA at 1 meter per CPCB-II norms.",
+  },
+  {
+    id: 3,
+    name: "Genesis Turnkey 1250 kVA Power Unit",
+    slug: "genesis-turnkey-1250kva-power-unit",
+    category: "Turnkey Power Plants",
+    powerRating: "1250 kVA / 1000 kWe",
+    engineBrand: "Twin-Turbocharged Electronic Engine",
+    phase: "3-Phase, 415V / 11kV HT Option",
+    description: "High-capacity captive power station unit with auto-synchronization and load sharing panels.",
+  },
+];
+
+const CATEGORIES = ["All Categories", "Diesel Generators", "Acoustic Enclosures", "Turnkey Power Plants", "Control Panels"];
 
 export const ProductsPage: React.FC = () => {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState("All Categories");
 
-  useEffect(() => {
-    // Dynamic Product Fetching Architecture (FastAPI -> PostgreSQL)
-    apiClient
-      .get<Product[]>("/products")
-      .then((res) => {
-        setProducts(res.data);
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.warn("Backend API not reachable yet; falling back to Phase 0 preview data", err);
-        // Architectural fallback during Phase 0 local preview
-        setProducts([
-          {
-            id: 1,
-            name: "Industrial Silent Diesel Generator 250 kVA",
-            slug: "silent-diesel-generator-250-kva",
-            category: "Diesel Generators",
-            description: "Heavy-duty acoustic enclosed silent diesel generator engineered for continuous industrial operations.",
-            features: ["CPCB IV+ Compliant", "Acoustic Enclosure", "Digital AMF Controller"],
-            is_active: true,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          },
-          {
-            id: 2,
-            name: "Heavy Duty Continuous Generator 500 kVA",
-            slug: "continuous-generator-500-kva",
-            category: "Industrial Power",
-            description: "Rugged prime power engine configuration for factories, continuous processing plants, and severe conditions.",
-            features: ["Electronic Governor", "Turbocharged Aftercooled", "High Fuel Economy"],
-            is_active: true,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          },
-        ]);
-        setLoading(false);
-      });
-  }, []);
+  const filteredProducts = selectedCategory === "All Categories"
+    ? SAMPLE_PRODUCTS
+    : SAMPLE_PRODUCTS.filter(p => p.category === selectedCategory);
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-8 py-16">
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
-        <div className="space-y-3">
-          <span className="text-amber-400 font-semibold text-xs uppercase tracking-widest">
-            Dynamic Catalog Foundation: /products
-          </span>
-          <h1 className="text-3xl sm:text-5xl font-bold text-white tracking-tight">
-            Industrial Power Equipment Catalogue
-          </h1>
-          <p className="text-slate-400 max-w-2xl text-sm">
-            Dynamically queried from PostgreSQL through FastAPI backend. No hardcoded products.
-          </p>
-        </div>
+    <div className="py-12 sm:py-16 space-y-12">
+      <Container size="lg">
+        {/* Section Header */}
+        <SectionHeader
+          badge="Equipment Catalog"
+          title="Industrial Power Generation Equipment"
+          subtitle="Explore Genesis heavy-duty diesel generators, customized enclosures, and complete captive power plants."
+          className="mb-8"
+        />
 
-        {/* Filter / Search Bar Foundation */}
-        <div className="flex items-center gap-3">
-          <div className="relative">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-            <input
-              type="text"
-              placeholder="Search equipment..."
-              className="bg-slate-900 border border-slate-800 rounded-xl pl-9 pr-4 py-2 text-xs text-white focus:outline-none focus:border-amber-500"
-              disabled
-            />
+        {/* Phase 1 Notice */}
+        <div className="mb-8 p-4 rounded-xl bg-amber-50 border border-amber-200 flex items-start gap-3 text-xs text-amber-800">
+          <ShieldCheck className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+          <div>
+            <span className="font-bold">Phase 1 Routing & Layout Demo:</span>
+            {" "}The catalogue architecture below demonstrates responsive product grid presentation and routes to dynamic product detail pages (`/products/:slug`). Full database-backed catalogue and filtering will be wired in Phase 2.
           </div>
-          <button className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-xs text-slate-300">
-            <Filter className="w-3.5 h-3.5 text-amber-500" />
-            Categories
-          </button>
         </div>
-      </div>
 
-      {loading ? (
-        <div className="py-20 text-center text-slate-500 text-sm">Connecting to GenesisConnect API...</div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {products.map((product) => (
-            <div
-              key={product.id}
-              className="glass-card rounded-2xl p-6 flex flex-col justify-between border border-slate-800 hover:border-amber-500/50 transition-colors"
+        {/* Category Filters */}
+        <div className="flex flex-wrap items-center gap-2 border-b border-slate-200 pb-4">
+          <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 mr-2">
+            <Filter className="w-3.5 h-3.5" />
+            <span>Filter:</span>
+          </div>
+          {CATEGORIES.map((category) => (
+            <button
+              key={category}
+              type="button"
+              onClick={() => setSelectedCategory(category)}
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 ${
+                selectedCategory === category
+                  ? "bg-slate-900 text-white font-semibold"
+                  : "bg-white text-slate-700 border border-slate-200 hover:bg-slate-50"
+              }`}
             >
-              <div className="space-y-4">
-                <div className="flex items-center justify-between text-xs text-slate-400">
-                  <span className="px-2.5 py-1 rounded-full bg-slate-800 text-amber-400 font-medium">
-                    {product.category}
-                  </span>
-                  <Package className="w-4 h-4 text-slate-500" />
-                </div>
-                <h3 className="text-lg font-bold text-white leading-snug">{product.name}</h3>
-                <p className="text-xs text-slate-400 line-clamp-3 leading-relaxed">
-                  {product.description}
-                </p>
-                {product.features && (
-                  <ul className="text-[11px] text-slate-300 space-y-1">
-                    {product.features.map((feat, idx) => (
-                      <li key={idx} className="flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
-                        {feat}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-
-              <div className="pt-6 mt-6 border-t border-slate-800/80 flex items-center justify-between">
-                <Link
-                  to={`/products/${product.slug}`}
-                  className="text-xs font-semibold text-amber-400 hover:text-amber-300 flex items-center gap-1"
-                >
-                  View Specifications
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </Link>
-                <Link
-                  to="/request-quote"
-                  className="text-xs px-3 py-1.5 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20 hover:bg-amber-500/20"
-                >
-                  Quote
-                </Link>
-              </div>
-            </div>
+              {category}
+            </button>
           ))}
         </div>
-      )}
 
-      <div className="mt-12 p-4 rounded-xl bg-slate-900/60 border border-slate-800 text-xs text-slate-500 text-center">
-        Phase 0 Routing & API Connection Established. Full catalog UI with high-res photos and live filtering will be styled in Phase 1.
-      </div>
+        {/* Product Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {filteredProducts.map((product) => (
+            <Card key={product.id} hover className="flex flex-col justify-between">
+              <div>
+                <CardHeader>
+                  <div className="flex items-center justify-between mb-2">
+                    <Badge variant="secondary" size="sm">{product.category}</Badge>
+                    <span className="text-xs font-bold text-amber-600">{product.powerRating}</span>
+                  </div>
+                  <CardTitle className="text-base sm:text-lg">{product.name}</CardTitle>
+                  <CardDescription>{product.description}</CardDescription>
+                </CardHeader>
+
+                <CardContent className="space-y-3 text-xs text-slate-600">
+                  <div className="flex justify-between border-b border-slate-100 pb-1.5">
+                    <span className="text-slate-500">Output Rating:</span>
+                    <span className="font-semibold text-slate-800">{product.powerRating}</span>
+                  </div>
+                  <div className="flex justify-between border-b border-slate-100 pb-1.5">
+                    <span className="text-slate-500">Electrical Phase:</span>
+                    <span className="font-semibold text-slate-800">{product.phase}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Engine Class:</span>
+                    <span className="font-semibold text-slate-800">{product.engineBrand}</span>
+                  </div>
+                </CardContent>
+              </div>
+
+              <CardFooter className="flex-col sm:flex-row gap-2">
+                <Link to={`/products/${product.slug}`} className="w-full sm:w-auto flex-1">
+                  <Button variant="outline" size="sm" fullWidth rightIcon={<ChevronRight className="w-3.5 h-3.5" />}>
+                    View Specs
+                  </Button>
+                </Link>
+                <Link to="/request-quote" className="w-full sm:w-auto flex-1">
+                  <Button variant="accent" size="sm" fullWidth leftIcon={<Zap className="w-3.5 h-3.5" />}>
+                    Quote
+                  </Button>
+                </Link>
+              </CardFooter>
+            </Card>
+          ))}
+        </div>
+      </Container>
     </div>
   );
 };
+
+export default ProductsPage;

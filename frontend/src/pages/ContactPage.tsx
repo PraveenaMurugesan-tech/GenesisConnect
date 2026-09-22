@@ -1,189 +1,194 @@
 import React, { useState } from "react";
-import { Mail, Phone, MapPin, Send, CheckCircle2 } from "lucide-react";
-import apiClient from "../services/api";
+import {
+  Phone,
+  Mail,
+  MapPin,
+  Clock,
+  Send,
+  CheckCircle2,
+  Headphones,
+  ShieldCheck,
+} from "lucide-react";
+import { Container } from "../components/common/Container";
+import { SectionHeader } from "../components/common/SectionHeader";
+import { Input } from "../components/ui/Input";
+import { Textarea } from "../components/ui/Textarea";
+import { Button } from "../components/ui/Button";
+import { Card, CardContent } from "../components/ui/Card";
 
 export const ContactPage: React.FC = () => {
-  const [formData, setFormData] = useState({
-    name: "",
-    company_name: "",
-    email: "",
-    phone: "",
-    subject: "",
-    message: "",
-  });
+  const [submitted, setSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const [submitting, setSubmitting] = useState(false);
-  const [success, setSuccess] = useState(false);
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitting(true);
-    try {
-      await apiClient.post("/contact", formData);
-      setSuccess(true);
-    } catch (err) {
-      console.warn("Contact API preview simulation", err);
-      setSuccess(true);
-    } finally {
-      setSubmitting(false);
-    }
+    setIsSubmitting(true);
+    setTimeout(() => {
+      setIsSubmitting(false);
+      setSubmitted(true);
+    }, 600);
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-8 py-16">
-      <div className="max-w-3xl mb-12 space-y-4">
-        <span className="text-amber-400 font-semibold text-xs uppercase tracking-widest">
-          Route Foundation: /contact
-        </span>
-        <h1 className="text-3xl sm:text-5xl font-bold text-white tracking-tight">
-          Contact Genesis Power Equipments
-        </h1>
-        <p className="text-slate-400 text-sm leading-relaxed">
-          Speak with our power generation consultants, schedule a site load assessment, or reach our round-the-clock emergency technical breakdown team.
-        </p>
-      </div>
+    <div className="py-12 sm:py-16 space-y-12">
+      <Container size="lg">
+        <SectionHeader
+          badge="Communications"
+          title="Contact Genesis Power Equipments"
+          subtitle="Get in touch with our sales engineers, technical support desk, or corporate headquarters in Chennai."
+          className="mb-8"
+        />
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
-        {/* Contact Info Cards */}
-        <div className="lg:col-span-5 space-y-6">
-          <div className="glass-card rounded-2xl p-6 border border-slate-800 space-y-4">
-            <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
-              <MapPin className="w-5 h-5 text-amber-500" />
-            </div>
-            <div>
-              <h3 className="text-base font-bold text-white">Registered Corporate Office</h3>
-              <p className="text-xs text-slate-400 mt-1 leading-relaxed">
-                Genesis Power Equipments Pvt. Ltd.<br />
-                Industrial Estate, Guindy, Chennai, Tamil Nadu, India.
-              </p>
-            </div>
-          </div>
-
-          <div className="glass-card rounded-2xl p-6 border border-slate-800 space-y-4">
-            <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
-              <Phone className="w-5 h-5 text-amber-500" />
-            </div>
-            <div>
-              <h3 className="text-base font-bold text-white">Direct Phone Lines</h3>
-              <p className="text-xs text-slate-400 mt-1 leading-relaxed">
-                General Inquiries: +91 (0) 44 2498 0000<br />
-                Emergency Breakdown Helpline: +91 98400 12345
-              </p>
-            </div>
-          </div>
-
-          <div className="glass-card rounded-2xl p-6 border border-slate-800 space-y-4">
-            <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
-              <Mail className="w-5 h-5 text-amber-500" />
-            </div>
-            <div>
-              <h3 className="text-base font-bold text-white">Electronic Mail</h3>
-              <p className="text-xs text-slate-400 mt-1 leading-relaxed">
-                Sales & Quotations: sales@genesispower.in<br />
-                Technical Support: support@genesispower.in
-              </p>
-            </div>
+        {/* Phase 1 Notice */}
+        <div className="mb-8 p-4 rounded-xl bg-amber-50 border border-amber-200 flex items-start gap-3 text-xs text-amber-800">
+          <ShieldCheck className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+          <div>
+            <span className="font-bold">Phase 1 Route & Layout:</span>
+            {" "}Contact channels and form presentation verified under the Genesis design system. Message inbox dispatching and email notification webhooks will be connected in Phase 3.
           </div>
         </div>
 
-        {/* Contact Form */}
-        <div className="lg:col-span-7">
-          {success ? (
-            <div className="glass-card rounded-2xl p-8 text-center space-y-4 border border-emerald-500/30">
-              <div className="w-12 h-12 rounded-full bg-emerald-500/10 text-emerald-400 flex items-center justify-center mx-auto">
-                <CheckCircle2 className="w-8 h-8" />
-              </div>
-              <h3 className="text-xl font-bold text-white">Message Sent Successfully</h3>
-              <p className="text-xs text-slate-300 leading-relaxed">
-                Thank you for contacting Genesis Power Equipments. An engineering representative will respond promptly to <strong>{formData.email}</strong>.
-              </p>
-            </div>
-          ) : (
-            <form onSubmit={handleSubmit} className="glass-card rounded-2xl p-8 border border-slate-800 space-y-4">
-              <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-300">
-                Send an Inquiry
-              </h3>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+          {/* Left Column: Contact Cards */}
+          <div className="lg:col-span-5 space-y-6">
+            <Card>
+              <CardContent className="p-6 sm:p-8 space-y-6">
+                <h3 className="font-heading text-lg font-bold text-slate-900 border-b border-slate-100 pb-3">
+                  Chennai Corporate Office & Works
+                </h3>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <label className="text-xs font-medium text-slate-300">Your Name *</label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:border-amber-500"
-                  />
+                <div className="space-y-4 text-sm text-slate-600">
+                  <div className="flex items-start gap-3">
+                    <MapPin className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <div className="font-semibold text-slate-900">Genesis Power Equipments Pvt. Ltd.</div>
+                      <div>Industrial Estate, Guindy</div>
+                      <div>Chennai, Tamil Nadu 600032, India</div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3">
+                    <Phone className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <div className="font-semibold text-slate-900">General Board Line</div>
+                      <a href="tel:+914424980000" className="text-sky-700 hover:underline">
+                        +91 (0) 44 2498 0000
+                      </a>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3">
+                    <Headphones className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <div className="font-semibold text-slate-900">24/7 Breakdown & AMC Hotline</div>
+                      <a href="tel:+919840012345" className="text-sky-700 hover:underline">
+                        +91 98400 12345 / 24 hrs
+                      </a>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3">
+                    <Mail className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <div className="font-semibold text-slate-900">Commercial & Inquiries</div>
+                      <a href="mailto:info@genesispower.in" className="text-sky-700 hover:underline">
+                        info@genesispower.in
+                      </a>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3">
+                    <Clock className="w-5 h-5 text-slate-400 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <div className="font-semibold text-slate-900">Works Operating Hours</div>
+                      <div>Monday – Saturday: 8:30 AM – 6:30 PM</div>
+                      <div className="text-xs text-slate-500">Emergency service teams on 24/7 standby</div>
+                    </div>
+                  </div>
                 </div>
+              </CardContent>
+            </Card>
+          </div>
 
-                <div className="space-y-1">
-                  <label className="text-xs font-medium text-slate-300">Company</label>
-                  <input
-                    type="text"
-                    value={formData.company_name}
-                    onChange={(e) => setFormData({ ...formData, company_name: e.target.value })}
-                    className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:border-amber-500"
-                  />
+          {/* Right Column: Contact Message Form */}
+          <div className="lg:col-span-7">
+            {submitted ? (
+              <div className="bg-white rounded-2xl border border-slate-200 p-8 sm:p-12 text-center shadow-industrial space-y-4">
+                <div className="w-14 h-14 rounded-full bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 mx-auto">
+                  <CheckCircle2 className="w-8 h-8" />
                 </div>
-
-                <div className="space-y-1">
-                  <label className="text-xs font-medium text-slate-300">Email *</label>
-                  <input
-                    type="email"
-                    required
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:border-amber-500"
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-xs font-medium text-slate-300">Phone</label>
-                  <input
-                    type="tel"
-                    value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:border-amber-500"
-                  />
+                <h3 className="font-heading text-2xl font-bold text-slate-900">
+                  Inquiry Transmitted (Demo)
+                </h3>
+                <p className="text-sm text-slate-600 max-w-md mx-auto leading-relaxed">
+                  Thank you. Your test message has been received in the Phase 1 frontend layout environment.
+                </p>
+                <div className="pt-4">
+                  <Button
+                    variant="outline"
+                    size="md"
+                    onClick={() => setSubmitted(false)}
+                  >
+                    Send Another Message
+                  </Button>
                 </div>
               </div>
+            ) : (
+              <Card>
+                <CardContent className="p-6 sm:p-10">
+                  <form onSubmit={handleSubmit} className="space-y-6">
+                    <div className="space-y-1">
+                      <h3 className="font-heading text-lg font-bold text-slate-900">
+                        Send Direct Message to Engineering Team
+                      </h3>
+                      <p className="text-xs text-slate-500">
+                        Fill out the details below and an engineer will reply promptly.
+                      </p>
+                    </div>
 
-              <div className="space-y-1">
-                <label className="text-xs font-medium text-slate-300">Subject</label>
-                <input
-                  type="text"
-                  value={formData.subject}
-                  onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-                  placeholder="e.g. Generator AMC Inquiry / Capacity Expansion"
-                  className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:border-amber-500"
-                />
-              </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                      <Input label="Your Name" placeholder="e.g. Ramesh Kumar" required />
+                      <Input label="Company Name" placeholder="e.g. Precision Industries" />
+                    </div>
 
-              <div className="space-y-1">
-                <label className="text-xs font-medium text-slate-300">Message *</label>
-                <textarea
-                  rows={4}
-                  required
-                  value={formData.message}
-                  onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                  className="w-full bg-slate-900 border border-slate-800 rounded-xl p-4 text-xs text-white focus:outline-none focus:border-amber-500"
-                />
-              </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                      <Input label="Email Address" type="email" placeholder="ramesh@company.com" required />
+                      <Input label="Phone Number" type="tel" placeholder="+91 98400 00000" />
+                    </div>
 
-              <div className="pt-2 flex justify-end">
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs transition-all shadow-lg shadow-amber-500/20"
-                >
-                  <Send className="w-3.5 h-3.5" />
-                  {submitting ? "Sending..." : "Submit Message"}
-                </button>
-              </div>
-            </form>
-          )}
+                    <Input
+                      label="Subject"
+                      placeholder="e.g. Inquiry regarding 500 kVA DG Set AMC / Installation"
+                      required
+                    />
+
+                    <Textarea
+                      label="Your Message"
+                      rows={5}
+                      placeholder="Please describe your equipment requirement, plant location, or service inquiry..."
+                      required
+                    />
+
+                    <div className="pt-2 flex justify-end">
+                      <Button
+                        type="submit"
+                        variant="primary"
+                        size="lg"
+                        isLoading={isSubmitting}
+                        leftIcon={<Send className="w-4 h-4" />}
+                      >
+                        Transmit Message
+                      </Button>
+                    </div>
+                  </form>
+                </CardContent>
+              </Card>
+            )}
+          </div>
         </div>
-      </div>
+      </Container>
     </div>
   );
 };
+
+export default ContactPage;

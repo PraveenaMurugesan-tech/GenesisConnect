@@ -1,158 +1,154 @@
 import React, { useState } from "react";
-import { useSearchParams, Link } from "react-router-dom";
-import { Send, CheckCircle2, AlertCircle } from "lucide-react";
-import apiClient from "../services/api";
+import { Zap, CheckCircle2, ShieldCheck, HelpCircle } from "lucide-react";
+import { Container } from "../components/common/Container";
+import { SectionHeader } from "../components/common/SectionHeader";
+import { Badge } from "../components/common/Badge";
+import { Input } from "../components/ui/Input";
+import { Select } from "../components/ui/Select";
+import { Textarea } from "../components/ui/Textarea";
+import { Button } from "../components/ui/Button";
+import { Card, CardContent } from "../components/ui/Card";
 
 export const RequestQuotePage: React.FC = () => {
-  const [searchParams] = useSearchParams();
-  const preselectedProductId = searchParams.get("product_id");
-  const preselectedProductName = searchParams.get("product_name");
+  const [submitted, setSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const [formData, setFormData] = useState({
-    customer_name: "",
-    company_name: "",
-    email: "",
-    phone: "",
-    product_id: preselectedProductId ? parseInt(preselectedProductId) : undefined,
-    message: "",
-  });
-
-  const [submitting, setSubmitting] = useState(false);
-  const [success, setSuccess] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitting(true);
-    setError(null);
-
-    try {
-      await apiClient.post("/quotes", formData);
-      setSuccess(true);
-    } catch (err: any) {
-      console.error("Quote submission error:", err);
-      // For local testing in Phase 0 when backend is offline
-      setSuccess(true);
-    } finally {
-      setSubmitting(false);
-    }
+    setIsSubmitting(true);
+    setTimeout(() => {
+      setIsSubmitting(false);
+      setSubmitted(true);
+    }, 600);
   };
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-8 py-16">
-      <div className="text-center max-w-2xl mx-auto mb-12 space-y-3">
-        <span className="text-amber-400 font-semibold text-xs uppercase tracking-widest">
-          Route Foundation: /request-quote
-        </span>
-        <h1 className="text-3xl sm:text-4xl font-bold text-white tracking-tight">
-          Request an Official Quotation
-        </h1>
-        <p className="text-slate-400 text-sm">
-          Connect directly with Genesis Power technical sales engineers for equipment pricing, supply lead times, and project estimates.
-        </p>
-      </div>
+    <div className="py-12 sm:py-16 space-y-12">
+      <Container size="md">
+        <SectionHeader
+          badge="Commercial Procurement"
+          title="Request an Equipment Quotation"
+          subtitle="Submit your power generation specifications and our commercial engineering department will prepare a detailed technical proposal."
+          className="mb-8"
+        />
 
-      {success ? (
-        <div className="glass-card rounded-2xl p-8 text-center space-y-4 max-w-lg mx-auto border border-emerald-500/30">
-          <div className="w-12 h-12 rounded-full bg-emerald-500/10 text-emerald-400 flex items-center justify-center mx-auto">
-            <CheckCircle2 className="w-8 h-8" />
-          </div>
-          <h3 className="text-xl font-bold text-white">Quotation Request Received</h3>
-          <p className="text-xs text-slate-300 leading-relaxed">
-            Thank you, <strong>{formData.customer_name}</strong>. Your inquiry has been registered in the GenesisConnect enquiry system. Our sales engineering team will reach out within 24 business hours.
-          </p>
-          <div className="pt-4">
-            <Link
-              to="/products"
-              className="text-xs px-4 py-2 rounded-lg bg-slate-800 text-amber-400 hover:bg-slate-700"
-            >
-              Browse More Equipment
-            </Link>
+        {/* Phase 1 Notice */}
+        <div className="mb-8 p-4 rounded-xl bg-amber-50 border border-amber-200 flex items-start gap-3 text-xs text-amber-800">
+          <ShieldCheck className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+          <div>
+            <span className="font-bold">Phase 1 UI Foundation:</span>
+            {" "}This quotation form demonstrates accessible input fields, selects, error states, and responsive styling. Live database submission, PDF quotation generation, and email alerts will be integrated in Phase 3.
           </div>
         </div>
-      ) : (
-        <form onSubmit={handleSubmit} className="glass-card rounded-2xl p-8 border border-slate-800 space-y-6">
-          {preselectedProductName && (
-            <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-xs text-amber-300">
-              Quotation Context: <strong>{preselectedProductName}</strong>
-            </div>
-          )}
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-slate-300">Full Name *</label>
-              <input
-                type="text"
-                required
-                value={formData.customer_name}
-                onChange={(e) => setFormData({ ...formData, customer_name: e.target.value })}
-                placeholder="e.g. Ramesh Kumar"
-                className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-amber-500"
-              />
+        {submitted ? (
+          <div className="bg-white rounded-2xl border border-slate-200 p-8 sm:p-12 text-center shadow-industrial space-y-4">
+            <div className="w-14 h-14 rounded-full bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 mx-auto">
+              <CheckCircle2 className="w-8 h-8" />
             </div>
-
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-slate-300">Company Name</label>
-              <input
-                type="text"
-                value={formData.company_name}
-                onChange={(e) => setFormData({ ...formData, company_name: e.target.value })}
-                placeholder="e.g. Apex Manufacturing Ltd."
-                className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-amber-500"
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-slate-300">Official Email *</label>
-              <input
-                type="email"
-                required
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                placeholder="ramesh@company.com"
-                className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-amber-500"
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-slate-300">Contact Phone / Mobile *</label>
-              <input
-                type="tel"
-                required
-                value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                placeholder="+91 98400 00000"
-                className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-amber-500"
-              />
+            <h3 className="font-heading text-2xl font-bold text-slate-900">
+              Quotation Request Received (Demo)
+            </h3>
+            <p className="text-sm text-slate-600 max-w-md mx-auto leading-relaxed">
+              Thank you for testing the GenesisConnect Phase 1 quotation form layout. Your simulated requirement has been captured.
+            </p>
+            <div className="pt-4">
+              <Button
+                variant="outline"
+                size="md"
+                onClick={() => setSubmitted(false)}
+              >
+                Submit Another Request
+              </Button>
             </div>
           </div>
+        ) : (
+          <Card>
+            <CardContent className="p-6 sm:p-10">
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  <Input
+                    label="Contact Person Name"
+                    placeholder="e.g. S. Ramaswamy"
+                    required
+                  />
+                  <Input
+                    label="Company / Organization"
+                    placeholder="e.g. L&T Heavy Engineering"
+                    required
+                  />
+                </div>
 
-          <div className="space-y-1.5">
-            <label className="text-xs font-medium text-slate-300">Project Requirements & Delivery Location</label>
-            <textarea
-              rows={4}
-              value={formData.message}
-              onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-              placeholder="Provide details on capacity, prime/standby power requirements, or installation timeline..."
-              className="w-full bg-slate-900 border border-slate-800 rounded-xl p-4 text-xs text-white focus:outline-none focus:border-amber-500"
-            />
-          </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  <Input
+                    label="Official Business Email"
+                    type="email"
+                    placeholder="name@company.com"
+                    required
+                  />
+                  <Input
+                    label="Telephone / Mobile Number"
+                    type="tel"
+                    placeholder="+91 98400 00000"
+                    required
+                  />
+                </div>
 
-          <div className="pt-2 flex items-center justify-between">
-            <div className="text-[11px] text-slate-500">
-              Submitted records are routed directly to the Genesis Admin Console.
-            </div>
-            <button
-              type="submit"
-              disabled={submitting}
-              className="flex items-center gap-2 px-6 py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs transition-all shadow-lg shadow-amber-500/20 disabled:opacity-50"
-            >
-              <Send className="w-3.5 h-3.5" />
-              {submitting ? "Submitting..." : "Submit Quotation Request"}
-            </button>
-          </div>
-        </form>
-      )}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  <Select
+                    label="Equipment Category"
+                    options={[
+                      { value: "dg_set", label: "Industrial Diesel Generator Set" },
+                      { value: "acoustic", label: "Acoustic Enclosure / Soundproofing" },
+                      { value: "turnkey", label: "Turnkey Captive Power Plant" },
+                      { value: "amf_panel", label: "AMF / Synchronization Panels" },
+                      { value: "amc", label: "Maintenance Contract (AMC)" },
+                    ]}
+                    required
+                  />
+
+                  <Select
+                    label="Estimated Capacity Requirement"
+                    options={[
+                      { value: "15_125", label: "15 kVA – 125 kVA (Commercial Light)" },
+                      { value: "160_500", label: "160 kVA – 500 kVA (Medium Industrial)" },
+                      { value: "600_1250", label: "600 kVA – 1250 kVA (Heavy Industrial)" },
+                      { value: "1500_3000", label: "1500 kVA – 3000 kVA (Multi-Megawatt)" },
+                    ]}
+                    required
+                  />
+                </div>
+
+                <Textarea
+                  label="Project Scope / Specific Technical Notes"
+                  rows={4}
+                  placeholder="Mention site location, sound level constraints, indoor/outdoor requirement, or switchgear specifications..."
+                />
+
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-slate-100">
+                  <div className="flex items-center gap-2 text-xs text-slate-500">
+                    <HelpCircle className="w-4 h-4 text-slate-400 flex-shrink-0" />
+                    <span>Average response time: &lt; 2 business hours</span>
+                  </div>
+
+                  <Button
+                    type="submit"
+                    variant="accent"
+                    size="lg"
+                    isLoading={isSubmitting}
+                    leftIcon={<Zap className="w-4 h-4" />}
+                    className="w-full sm:w-auto"
+                  >
+                    Generate Technical Quotation
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        )}
+      </Container>
     </div>
   );
 };
+
+export default RequestQuotePage;

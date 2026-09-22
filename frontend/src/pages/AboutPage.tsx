@@ -1,56 +1,100 @@
 import React from "react";
-import { Building2, Award, Users, CheckCircle } from "lucide-react";
+import { Link } from "react-router-dom";
+import {
+  Building2,
+  Award,
+  Users,
+  ShieldCheck,
+  ChevronRight,
+  Gauge,
+} from "lucide-react";
+import { Container } from "../components/common/Container";
+import { SectionHeader } from "../components/common/SectionHeader";
+import { Card, CardContent } from "../components/ui/Card";
+import { Button } from "../components/ui/Button";
 
 export const AboutPage: React.FC = () => {
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-8 py-16">
-      <div className="max-w-3xl mb-12 space-y-4">
-        <span className="text-amber-400 font-semibold text-xs uppercase tracking-widest">
-          Route Foundation: /about
-        </span>
-        <h1 className="text-3xl sm:text-5xl font-bold text-white tracking-tight">
-          About Genesis Power Equipments Pvt. Ltd.
-        </h1>
-        <p className="text-slate-400 leading-relaxed text-base">
-          Genesis Power Equipments Pvt. Ltd. is a dedicated industrial power solutions company offering manufacturing, installation, commissioning, and maintenance of high-performance diesel generators, energy backup units, and switchgear systems.
-        </p>
-      </div>
+    <div className="py-12 sm:py-16 space-y-16">
+      <Container size="lg">
+        {/* Section Header */}
+        <SectionHeader
+          badge="Company Profile"
+          title="About Genesis Power Equipments Pvt. Ltd."
+          subtitle="Delivering reliable, high-output industrial power generation systems, acoustic engineering, and complete turnkey electrical installations."
+          className="mb-12"
+        />
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="glass-card p-6 rounded-2xl space-y-3">
-          <Building2 className="w-6 h-6 text-amber-500" />
-          <h3 className="font-semibold text-white text-base">Company Infrastructure</h3>
-          <p className="text-xs text-slate-400 leading-relaxed">
-            Full-fledged testing facilities, load bank testing, acoustic chamber diagnostics, and turnkey installation capabilities across South India.
+        {/* Core Pillars */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <Card hover>
+            <CardContent className="p-8 space-y-4">
+              <div className="w-12 h-12 rounded-xl bg-slate-900 text-amber-400 flex items-center justify-center">
+                <Building2 className="w-6 h-6" />
+              </div>
+              <h3 className="font-heading text-lg font-bold text-slate-900">
+                Manufacturing & Testing Infrastructure
+              </h3>
+              <p className="text-sm text-slate-600 leading-relaxed">
+                Modern manufacturing facilities located in Chennai equipped with precision sheet metal fabrication, computerized load bank testing, acoustic diagnostics, and assembly bays.
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card hover>
+            <CardContent className="p-8 space-y-4">
+              <div className="w-12 h-12 rounded-xl bg-slate-900 text-amber-400 flex items-center justify-center">
+                <Award className="w-6 h-6" />
+              </div>
+              <h3 className="font-heading text-lg font-bold text-slate-900">
+                ISO & Emission Compliance
+              </h3>
+              <p className="text-sm text-slate-600 leading-relaxed">
+                Operating under rigorous ISO 9001:2015 quality standards with strict adherence to Central Pollution Control Board (CPCB-II) emission and noise limits.
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card hover>
+            <CardContent className="p-8 space-y-4">
+              <div className="w-12 h-12 rounded-xl bg-slate-900 text-amber-400 flex items-center justify-center">
+                <Users className="w-6 h-6" />
+              </div>
+              <h3 className="font-heading text-lg font-bold text-slate-900">
+                Certified Engineering Team
+              </h3>
+              <p className="text-sm text-slate-600 leading-relaxed">
+                Our in-house team of electrical and mechanical engineers possess decades of combined experience in project design, commissioning, and mission-critical power management.
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Phase 1 Status Banner */}
+        <div className="mt-12 bg-white rounded-2xl border border-slate-200 p-8 shadow-industrial space-y-4">
+          <div className="flex items-center gap-2.5 text-sm font-bold text-slate-900">
+            <ShieldCheck className="w-5 h-5 text-emerald-600" />
+            <span>Route Foundation: /about</span>
+          </div>
+          <p className="text-sm text-slate-600 leading-relaxed max-w-2xl">
+            This route is successfully integrated into the GenesisConnect design system. Detailed corporate leadership profiles, company milestones, and client case studies will be connected during Phase 2.
           </p>
+          <div className="pt-2 flex flex-wrap gap-4">
+            <Link to="/products">
+              <Button variant="primary" size="md" rightIcon={<ChevronRight className="w-4 h-4" />}>
+                Explore Our Products
+              </Button>
+            </Link>
+            <Link to="/contact">
+              <Button variant="outline" size="md" leftIcon={<Gauge className="w-4 h-4" />}>
+                Contact Our Engineering Office
+              </Button>
+            </Link>
+          </div>
         </div>
-
-        <div className="glass-card p-6 rounded-2xl space-y-3">
-          <Award className="w-6 h-6 text-amber-500" />
-          <h3 className="font-semibold text-white text-base">Quality & Compliance</h3>
-          <p className="text-xs text-slate-400 leading-relaxed">
-            Adherence to ISO and CPCB emission standards, certified heavy-duty components, and stringent load testing before project sign-off.
-          </p>
-        </div>
-
-        <div className="glass-card p-6 rounded-2xl space-y-3">
-          <Users className="w-6 h-6 text-amber-500" />
-          <h3 className="font-semibold text-white text-base">Engineering Team</h3>
-          <p className="text-xs text-slate-400 leading-relaxed">
-            Certified technical engineers, rapid-response breakdown technicians, and dedicated account managers for corporate clients.
-          </p>
-        </div>
-      </div>
-
-      <div className="mt-12 p-6 rounded-2xl bg-slate-900 border border-slate-800 text-xs text-slate-400 space-y-2">
-        <div className="font-semibold text-white flex items-center gap-2">
-          <CheckCircle className="w-4 h-4 text-emerald-400" />
-          Phase 0 Foundation Status
-        </div>
-        <p>
-          This route (/about) is successfully registered in the routing architecture. Full client content, leadership profiles, factory media, and timeline elements will be populated in Phase 1.
-        </p>
-      </div>
+      </Container>
     </div>
   );
 };
+
+export default AboutPage;

@@ -1,64 +1,66 @@
-import React, { useEffect, useState } from "react";
-import { Wrench, Plus, Edit2 } from "lucide-react";
-import apiClient from "../../services/api";
-import { Service } from "../../types";
+import React from "react";
+import { Wrench, ShieldCheck, CheckCircle } from "lucide-react";
+import { Badge } from "../../components/common/Badge";
+import { Card, CardContent } from "../../components/ui/Card";
 
 export const AdminServicesPage: React.FC = () => {
-  const [services, setServices] = useState<Service[]>([
-    {
-      id: 1,
-      title: "Annual Maintenance Contracts (AMC) & Preventive Care",
-      slug: "amc-and-preventive-care",
-      description: "Periodic inspection, oil and filter replacements, and priority breakdown response.",
-      is_active: true,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    },
-    {
-      id: 2,
-      title: "Turnkey Power Plant Installation & Commissioning",
-      slug: "turnkey-installation-commissioning",
-      description: "Foundation, ventilation ducting, exhaust piping, and synchronization panels.",
-      is_active: true,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    },
-  ]);
+  const serviceCategories = [
+    { title: "Preventive AMC Contracts", activeContracts: 38, engineersAssigned: 12 },
+    { title: "Load Bank Testing & Diagnostics", activeContracts: 6, engineersAssigned: 4 },
+    { title: "Overhaul & Turnkey Commissioning", activeContracts: 9, engineersAssigned: 8 },
+  ];
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <span className="text-amber-400 font-semibold text-xs uppercase tracking-widest">
-            Route: /admin/services
-          </span>
-          <h1 className="text-2xl font-bold text-white tracking-tight mt-1">Services Management</h1>
-          <p className="text-xs text-slate-400">Manage industrial maintenance, AMC, and engineering services.</p>
+      <div className="border-b border-slate-200 pb-6">
+        <div className="flex items-center gap-2 mb-1">
+          <Badge variant="accent">Field Operations</Badge>
+          <span className="text-xs text-slate-500 font-mono">/admin/services</span>
         </div>
-
-        <button className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold text-xs transition-all shadow-lg shadow-amber-500/20">
-          <Plus className="w-4 h-4" />
-          Add Service
-        </button>
+        <h1 className="font-heading text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
+          Engineering Services & AMC Administration
+        </h1>
+        <p className="text-sm text-slate-600 mt-1">
+          Manage service offerings, engineer assignment schedules, and preventive maintenance agreements.
+        </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {services.map((s) => (
-          <div key={s.id} className="glass-card rounded-2xl p-6 border border-slate-800 space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 text-[10px] font-semibold">
-                Active
-              </span>
-              <button className="text-slate-400 hover:text-amber-400">
-                <Edit2 className="w-3.5 h-3.5" />
-              </button>
-            </div>
-            <h3 className="font-bold text-white text-base">{s.title}</h3>
-            <p className="text-xs text-slate-400 leading-relaxed">{s.description}</p>
-            <div className="text-[10px] text-slate-500 font-mono pt-2">Slug: {s.slug}</div>
-          </div>
+      <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 flex items-start gap-3 text-xs text-amber-800">
+        <ShieldCheck className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+        <div>
+          <span className="font-bold">Phase 1 Route Foundation:</span>
+          {" "}This administrative services overview demonstrates layout and card conventions. Full field service dispatching and contract renewal tracking will be connected in Phase 4.
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {serviceCategories.map((s, idx) => (
+          <Card key={idx} hover>
+            <CardContent className="p-6 space-y-4">
+              <div className="w-10 h-10 rounded-lg bg-sky-50 text-sky-700 flex items-center justify-center">
+                <Wrench className="w-5 h-5" />
+              </div>
+              <h3 className="font-heading text-base font-bold text-slate-900">{s.title}</h3>
+              <div className="space-y-2 text-xs text-slate-600">
+                <div className="flex justify-between border-b border-slate-100 pb-1">
+                  <span>Active Client Accounts:</span>
+                  <span className="font-bold text-slate-900">{s.activeContracts}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Field Technicians Assigned:</span>
+                  <span className="font-bold text-slate-900">{s.engineersAssigned}</span>
+                </div>
+              </div>
+              <div className="pt-2 flex items-center gap-1.5 text-xs text-emerald-600 font-medium">
+                <CheckCircle className="w-3.5 h-3.5" />
+                <span>Operational Module</span>
+              </div>
+            </CardContent>
+          </Card>
         ))}
       </div>
     </div>
   );
 };
+
+export default AdminServicesPage;

@@ -1,116 +1,108 @@
-import React, { useState } from "react";
+import React from "react";
 import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, CheckCircle, Mail, Phone, Building } from "lucide-react";
-import apiClient from "../../services/api";
-import { QuoteStatus } from "../../types";
+import { ArrowLeft, CheckCircle2, ShieldCheck, Mail, Phone, Building } from "lucide-react";
+import { Badge } from "../../components/common/Badge";
+import { Button } from "../../components/ui/Button";
+import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/Card";
 
 export const AdminEnquiryDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const [status, setStatus] = useState<QuoteStatus>("NEW");
-  const [updating, setUpdating] = useState(false);
-  const [success, setSuccess] = useState(false);
-
-  const handleStatusChange = async (newStatus: QuoteStatus) => {
-    setStatus(newStatus);
-    setUpdating(true);
-    try {
-      await apiClient.patch(`/quotes/${id}/status`, { status: newStatus });
-      setSuccess(true);
-      setTimeout(() => setSuccess(false), 2000);
-    } catch (err) {
-      console.warn("Status change preview simulation", err);
-      setSuccess(true);
-      setTimeout(() => setSuccess(false), 2000);
-    } finally {
-      setUpdating(false);
-    }
-  };
 
   return (
-    <div className="max-w-4xl space-y-6">
-      <div className="flex items-center gap-4">
-        <Link to="/admin/enquiries" className="p-2 rounded-lg bg-slate-900 text-slate-400 hover:text-white border border-slate-800">
-          <ArrowLeft className="w-4 h-4" />
+    <div className="space-y-6 max-w-4xl">
+      <div className="flex items-center gap-4 border-b border-slate-200 pb-6">
+        <Link to="/admin/enquiries">
+          <button className="p-2 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors">
+            <ArrowLeft className="w-5 h-5" />
+          </button>
         </Link>
         <div>
-          <span className="text-amber-400 font-semibold text-xs uppercase tracking-widest">
-            Route: /admin/enquiries/{id}
-          </span>
-          <h1 className="text-2xl font-bold text-white tracking-tight mt-0.5">
-            Enquiry Dossier #{id}
+          <div className="flex items-center gap-2 mb-1">
+            <Badge variant="accent">Enquiry ID #{id}</Badge>
+            <span className="text-xs text-slate-500 font-mono">/admin/enquiries/{id}</span>
+          </div>
+          <h1 className="font-heading text-2xl font-bold text-slate-900 tracking-tight">
+            Quotation Request Evaluation
           </h1>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main Details */}
-        <div className="lg:col-span-2 space-y-6">
-          <div className="glass-card rounded-2xl p-6 border border-slate-800 space-y-4">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-              Customer & Inquiring Party
-            </h3>
-            <div className="grid grid-cols-2 gap-4 text-xs">
-              <div>
-                <span className="text-slate-500 block">Customer Name</span>
-                <span className="font-semibold text-white text-sm">Ramesh Kumar</span>
-              </div>
-              <div>
-                <span className="text-slate-500 block">Company Name</span>
-                <span className="font-semibold text-white text-sm">Apex Manufacturing Ltd.</span>
-              </div>
-              <div>
-                <span className="text-slate-500 block">Official Email</span>
-                <span className="text-slate-300">ramesh@apexmanuf.com</span>
-              </div>
-              <div>
-                <span className="text-slate-500 block">Phone</span>
-                <span className="text-slate-300">+91 98400 11111</span>
-              </div>
-            </div>
+      {/* Phase 1 Notice */}
+      <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 flex items-start gap-3 text-xs text-amber-800">
+        <ShieldCheck className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+        <div>
+          <span className="font-bold">Phase 1 Route Binding:</span>
+          {" "}This detail page demonstrates parameter extraction for enquiry #{id}. Commercial PDF generator and status workflow will be connected in Phase 4.
+        </div>
+      </div>
 
-            <div className="pt-4 border-t border-slate-800 space-y-2">
-              <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 block">
-                Message & Scope
-              </span>
-              <p className="text-xs text-slate-300 leading-relaxed bg-slate-900/80 p-4 rounded-xl border border-slate-800">
-                "Urgent quote required for 250 kVA silent diesel generator for factory expansion at our Oragadam unit. Needs to be commissioned within 3 weeks with AMF panel."
-              </p>
-            </div>
-          </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="md:col-span-2 space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Customer & Equipment Details</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4 text-sm">
+              <div className="flex items-center gap-2 text-slate-700">
+                <Building className="w-4 h-4 text-slate-400" />
+                <span className="font-semibold text-slate-900">L&T Heavy Engineering — Manapakkam Plant</span>
+              </div>
+              <div className="flex items-center gap-2 text-slate-700">
+                <Mail className="w-4 h-4 text-slate-400" />
+                <span>ramaswamy.s@lnt.com</span>
+              </div>
+              <div className="flex items-center gap-2 text-slate-700">
+                <Phone className="w-4 h-4 text-slate-400" />
+                <span>+91 98400 98765</span>
+              </div>
+
+              <div className="border-t border-slate-100 pt-3">
+                <div className="text-xs font-bold uppercase text-slate-500 tracking-wider mb-1">Requested Solution:</div>
+                <div className="font-semibold text-slate-900">500 kVA Silent Diesel Generator with Auto Synchronization Panel</div>
+              </div>
+
+              <div className="border-t border-slate-100 pt-3">
+                <div className="text-xs font-bold uppercase text-slate-500 tracking-wider mb-1">Project Description:</div>
+                <p className="text-slate-600 leading-relaxed text-xs">
+                  Require continuous standby backup for manufacturing assembly line 3. CPCB-II acoustic canopy required due to residential buffer zone nearby.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
-        {/* Workflow & Status Selector */}
         <div className="space-y-6">
-          <div className="glass-card rounded-2xl p-6 border border-slate-800 space-y-4">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-              Workflow Status
-            </h3>
-
-            <div className="space-y-2">
-              {(["NEW", "CONTACTED", "IN_PROGRESS", "QUOTED", "CLOSED"] as QuoteStatus[]).map((st) => (
-                <button
-                  key={st}
-                  onClick={() => handleStatusChange(st)}
-                  className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all flex items-center justify-between ${
-                    status === st
-                      ? "bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20"
-                      : "bg-slate-900 text-slate-400 hover:text-white border border-slate-800"
-                  }`}
-                >
-                  <span>{st}</span>
-                  {status === st && <CheckCircle className="w-4 h-4" />}
-                </button>
-              ))}
-            </div>
-
-            {success && (
-              <div className="p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-400 text-center">
-                Status updated successfully
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Status Workflow</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-slate-500">Current Status:</span>
+                <Badge variant="accent">NEW</Badge>
               </div>
-            )}
-          </div>
+              <div className="pt-2 space-y-2">
+                <Button
+                  variant="primary"
+                  size="sm"
+                  fullWidth
+                  leftIcon={<CheckCircle2 className="w-4 h-4" />}
+                  onClick={() => alert("Status transitions will be wired in Phase 4.")}
+                >
+                  Mark as Quoted
+                </Button>
+                <Link to="/admin/enquiries" className="block">
+                  <Button variant="outline" size="sm" fullWidth>
+                    Back to Inbox
+                  </Button>
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>
   );
 };
+
+export default AdminEnquiryDetailPage;

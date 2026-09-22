@@ -1,4 +1,3 @@
-import React from "react";
 import { createBrowserRouter, Navigate } from "react-router-dom";
 
 // Layouts
@@ -14,6 +13,7 @@ import { ServicesPage } from "../pages/ServicesPage";
 import { RequestQuotePage } from "../pages/RequestQuotePage";
 import { CustomizedRequirementPage } from "../pages/CustomizedRequirementPage";
 import { ContactPage } from "../pages/ContactPage";
+import { NotFoundPage } from "../pages/NotFoundPage";
 
 // Admin Pages
 import { AdminLoginPage } from "../pages/admin/AdminLoginPage";
@@ -40,6 +40,7 @@ export const router = createBrowserRouter([
       { path: "request-quote", element: <RequestQuotePage /> },
       { path: "customized-requirement", element: <CustomizedRequirementPage /> },
       { path: "contact", element: <ContactPage /> },
+      { path: "*", element: <NotFoundPage /> },
     ],
   },
 
@@ -64,6 +65,7 @@ export const router = createBrowserRouter([
       { path: "services", element: <AdminServicesPage /> },
       { path: "content", element: <AdminContentPage /> },
       { path: "settings", element: <AdminSettingsPage /> },
+      { path: "*", element: <NotFoundPage /> },
     ],
   },
 
@@ -73,3 +75,5 @@ export const router = createBrowserRouter([
     element: <Navigate to="/" replace />,
   },
 ]);
+
+export default router;

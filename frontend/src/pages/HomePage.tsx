@@ -10,12 +10,20 @@ import { Container } from "../components/common/Container";
 import { SectionHeader } from "../components/common/SectionHeader";
 import { Card, CardContent } from "../components/ui/Card";
 import { HeroSection } from "../components/home/HeroSection";
+import { CompanyIntroSection } from "../components/home/CompanyIntroSection";
+import { FeaturedProductsSection } from "../components/home/FeaturedProductsSection";
 
 export const HomePage: React.FC = () => {
   return (
-    <div className="space-y-16 pb-16">
+    <div className="space-y-0 pb-16">
       {/* Genesis Corporate Hero Section */}
       <HeroSection />
+
+      {/* Company Introduction */}
+      <CompanyIntroSection />
+
+      {/* Featured Products Showcase */}
+      <FeaturedProductsSection />
 
 
 

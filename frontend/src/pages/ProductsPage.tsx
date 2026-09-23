@@ -1,151 +1,178 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { Zap, ShieldCheck, ChevronRight, Filter } from "lucide-react";
+import {
+  ChevronRight,
+  Filter,
+  Search,
+  Sliders,
+  ArrowRight,
+  Zap,
+} from "lucide-react";
 import { Container } from "../components/common/Container";
 import { SectionHeader } from "../components/common/SectionHeader";
-import { Badge } from "../components/common/Badge";
 import { Button } from "../components/ui/Button";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "../components/ui/Card";
-
-export interface MockProduct {
-  id: number;
-  name: string;
-  slug: string;
-  category: string;
-  powerRating: string;
-  engineBrand: string;
-  phase: string;
-  description: string;
-}
-
-const SAMPLE_PRODUCTS: MockProduct[] = [
-  {
-    id: 1,
-    name: "Genesis Prime 500 kVA Heavy Industrial DG Set",
-    slug: "genesis-prime-500kva-dg-set",
-    category: "Diesel Generators",
-    powerRating: "500 kVA / 400 kWe",
-    engineBrand: "Heavy Duty Multi-Cylinder Turbocharged",
-    phase: "3-Phase, 415V, 50 Hz",
-    description: "Designed for continuous heavy manufacturing plants, hospitals, and critical data backup.",
-  },
-  {
-    id: 2,
-    name: "Genesis Silent Acoustic 250 kVA Generator",
-    slug: "genesis-silent-acoustic-250kva-generator",
-    category: "Acoustic Enclosures",
-    powerRating: "250 kVA / 200 kWe",
-    engineBrand: "Electronic Governor Industrial Diesel",
-    phase: "3-Phase, 415V, 50 Hz",
-    description: "Sound-attenuated weatherproof enclosure rated < 75 dBA at 1 meter per CPCB-II norms.",
-  },
-  {
-    id: 3,
-    name: "Genesis Turnkey 1250 kVA Power Unit",
-    slug: "genesis-turnkey-1250kva-power-unit",
-    category: "Turnkey Power Plants",
-    powerRating: "1250 kVA / 1000 kWe",
-    engineBrand: "Twin-Turbocharged Electronic Engine",
-    phase: "3-Phase, 415V / 11kV HT Option",
-    description: "High-capacity captive power station unit with auto-synchronization and load sharing panels.",
-  },
-];
-
-const CATEGORIES = ["All Categories", "Diesel Generators", "Acoustic Enclosures", "Turnkey Power Plants", "Control Panels"];
+import { EmptyState } from "../components/ui/EmptyState";
+import { ProductCard } from "../components/products/ProductCard";
+import { getAllProducts, PRODUCT_CATEGORIES, ProductCategory } from "../data/products";
 
 export const ProductsPage: React.FC = () => {
-  const [selectedCategory, setSelectedCategory] = useState("All Categories");
+  const [selectedCategory, setSelectedCategory] = useState<ProductCategory>("All Categories");
+  const [searchQuery, setSearchQuery] = useState("");
 
-  const filteredProducts = selectedCategory === "All Categories"
-    ? SAMPLE_PRODUCTS
-    : SAMPLE_PRODUCTS.filter(p => p.category === selectedCategory);
+  const allProducts = useMemo(() => getAllProducts(), []);
+
+  // Filter products based on category and search query
+  const filteredProducts = useMemo(() => {
+    return allProducts.filter((product) => {
+      const matchesCategory =
+        selectedCategory === "All Categories" || product.category === selectedCategory;
+      const matchesSearch =
+        searchQuery.trim() === "" ||
+        product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (product.short_description &&
+          product.short_description.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (product.tagline && product.tagline.toLowerCase().includes(searchQuery.toLowerCase()));
+
+      return matchesCategory && matchesSearch;
+    });
+  }, [allProducts, selectedCategory, searchQuery]);
+
+  const handleResetFilters = () => {
+    setSelectedCategory("All Categories");
+    setSearchQuery("");
+  };
 
   return (
-    <div className="py-12 sm:py-16 space-y-12">
+    <div className="py-10 sm:py-14 space-y-12">
       <Container size="lg">
+        {/* Breadcrumb Navigation */}
+        <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-xs text-slate-500 mb-6">
+          <Link to="/" className="hover:text-slate-900 transition-colors">Home</Link>
+          <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+          <span className="text-slate-800 font-semibold">Products Catalog</span>
+        </nav>
+
         {/* Section Header */}
         <SectionHeader
-          badge="Equipment Catalog"
-          title="Industrial Power Generation Equipment"
-          subtitle="Explore Genesis heavy-duty diesel generators, customized enclosures, and complete captive power plants."
+          badge="Equipment Catalogue"
+          title="Industrial Power Equipment & Systems"
+          subtitle="Explore the complete Genesis product portfolio engineered for manufacturing, medical imaging, data centers, and critical commercial facilities."
           className="mb-8"
         />
 
-        {/* Phase 1 Notice */}
-        <div className="mb-8 p-4 rounded-xl bg-amber-50 border border-amber-200 flex items-start gap-3 text-xs text-amber-800">
-          <ShieldCheck className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
-          <div>
-            <span className="font-bold">Phase 1 Routing & Layout Demo:</span>
-            {" "}The catalogue architecture below demonstrates responsive product grid presentation and routes to dynamic product detail pages (`/products/:slug`). Full database-backed catalogue and filtering will be wired in Phase 2.
-          </div>
-        </div>
+        {/* Filter & Search Bar */}
+        <div className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-industrial space-y-5">
+          <div className="flex flex-col md:flex-row gap-4 justify-between items-stretch md:items-center">
+            {/* Search Input */}
+            <div className="relative flex-1 max-w-md">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search products by model, technology, or application..."
+                className="w-full pl-10 pr-4 py-2.5 rounded-xl text-sm bg-slate-50 border border-slate-200 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-600 focus:border-transparent transition-all"
+                aria-label="Search equipment catalog"
+              />
+            </div>
 
-        {/* Category Filters */}
-        <div className="flex flex-wrap items-center gap-2 border-b border-slate-200 pb-4">
-          <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 mr-2">
-            <Filter className="w-3.5 h-3.5" />
-            <span>Filter:</span>
+            {/* Results Counter */}
+            <div className="flex items-center justify-between sm:justify-end gap-3 text-xs text-slate-500">
+              <span>
+                Showing <strong>{filteredProducts.length}</strong> of {allProducts.length} products
+              </span>
+              {(selectedCategory !== "All Categories" || searchQuery !== "") && (
+                <button
+                  type="button"
+                  onClick={handleResetFilters}
+                  className="text-amber-600 hover:text-amber-700 font-semibold underline underline-offset-2"
+                >
+                  Reset filters
+                </button>
+              )}
+            </div>
           </div>
-          {CATEGORIES.map((category) => (
-            <button
-              key={category}
-              type="button"
-              onClick={() => setSelectedCategory(category)}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 ${
-                selectedCategory === category
-                  ? "bg-slate-900 text-white font-semibold"
-                  : "bg-white text-slate-700 border border-slate-200 hover:bg-slate-50"
-              }`}
-            >
-              {category}
-            </button>
-          ))}
+
+          {/* Category Tabs */}
+          <div className="border-t border-slate-100 pt-4 flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 mr-2">
+              <Filter className="w-3.5 h-3.5" />
+              <span>Category:</span>
+            </div>
+
+            {PRODUCT_CATEGORIES.map((category) => (
+              <button
+                key={category}
+                type="button"
+                onClick={() => setSelectedCategory(category)}
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 ${
+                  selectedCategory === category
+                    ? "bg-slate-900 text-white font-semibold shadow-sm"
+                    : "bg-slate-50 text-slate-700 border border-slate-200 hover:bg-slate-100"
+                }`}
+              >
+                {category}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Product Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {filteredProducts.map((product) => (
-            <Card key={product.id} hover className="flex flex-col justify-between">
-              <div>
-                <CardHeader>
-                  <div className="flex items-center justify-between mb-2">
-                    <Badge variant="secondary" size="sm">{product.category}</Badge>
-                    <span className="text-xs font-bold text-amber-600">{product.powerRating}</span>
-                  </div>
-                  <CardTitle className="text-base sm:text-lg">{product.name}</CardTitle>
-                  <CardDescription>{product.description}</CardDescription>
-                </CardHeader>
+        {filteredProducts.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {filteredProducts.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+        ) : (
+          <EmptyState
+            title="No matching equipment found"
+            description="Try selecting a different category or refining your search keywords."
+            action={
+              <Button variant="outline" size="sm" onClick={handleResetFilters}>
+                Clear All Filters
+              </Button>
+            }
+          />
+        )}
 
-                <CardContent className="space-y-3 text-xs text-slate-600">
-                  <div className="flex justify-between border-b border-slate-100 pb-1.5">
-                    <span className="text-slate-500">Output Rating:</span>
-                    <span className="font-semibold text-slate-800">{product.powerRating}</span>
-                  </div>
-                  <div className="flex justify-between border-b border-slate-100 pb-1.5">
-                    <span className="text-slate-500">Electrical Phase:</span>
-                    <span className="font-semibold text-slate-800">{product.phase}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-500">Engine Class:</span>
-                    <span className="font-semibold text-slate-800">{product.engineBrand}</span>
-                  </div>
-                </CardContent>
-              </div>
+        {/* Bottom Customized Requirement & Quote CTA */}
+        <div className="rounded-2xl bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white p-8 sm:p-10 border border-slate-800 shadow-xl flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="space-y-2">
+            <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-amber-400">
+              <Zap className="w-4 h-4" />
+              <span>Custom Engineering Scope</span>
+            </div>
+            <h3 className="font-heading text-xl sm:text-2xl font-bold text-white tracking-tight">
+              Require Non-Standard Voltage, Battery Runtime, or Dual Isolation?
+            </h3>
+            <p className="text-sm text-slate-300 max-w-xl">
+              Genesis consults on custom electrical single-line diagrams (SLD), bespoke enclosure dimensions, and multi-unit synchronization panels.
+            </p>
+          </div>
 
-              <CardFooter className="flex-col sm:flex-row gap-2">
-                <Link to={`/products/${product.slug}`} className="w-full sm:w-auto flex-1">
-                  <Button variant="outline" size="sm" fullWidth rightIcon={<ChevronRight className="w-3.5 h-3.5" />}>
-                    View Specs
-                  </Button>
-                </Link>
-                <Link to="/request-quote" className="w-full sm:w-auto flex-1">
-                  <Button variant="accent" size="sm" fullWidth leftIcon={<Zap className="w-3.5 h-3.5" />}>
-                    Quote
-                  </Button>
-                </Link>
-              </CardFooter>
-            </Card>
-          ))}
+          <div className="flex flex-wrap items-center gap-3">
+            <Link to="/customized-requirement">
+              <Button
+                variant="accent"
+                size="md"
+                leftIcon={<Sliders className="w-4 h-4" />}
+                className="font-semibold shadow-md"
+              >
+                Custom Requirement
+              </Button>
+            </Link>
+            <Link to="/request-quote">
+              <Button
+                variant="outline"
+                size="md"
+                rightIcon={<ArrowRight className="w-4 h-4" />}
+                className="bg-slate-800 text-white border-slate-700 hover:bg-slate-700 hover:text-white"
+              >
+                Request Quotation
+              </Button>
+            </Link>
+          </div>
         </div>
       </Container>
     </div>

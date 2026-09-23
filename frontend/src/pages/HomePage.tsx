@@ -2,106 +2,23 @@ import React from "react";
 import { Link } from "react-router-dom";
 import {
   Zap,
-  ShieldCheck,
-  Cpu,
-  ArrowRight,
   Wrench,
   Layers,
   ChevronRight,
 } from "lucide-react";
 import { Container } from "../components/common/Container";
 import { SectionHeader } from "../components/common/SectionHeader";
-import { Badge } from "../components/common/Badge";
-import { Button } from "../components/ui/Button";
 import { Card, CardContent } from "../components/ui/Card";
+import { HeroSection } from "../components/home/HeroSection";
 
 export const HomePage: React.FC = () => {
   return (
-    <div className="space-y-16 py-8 sm:py-12">
-      {/* Hero Section */}
-      <section className="bg-slate-900 text-white py-16 sm:py-24 border-b border-slate-800 relative overflow-hidden">
-        {/* Subtle industrial grid pattern */}
-        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#38bdf8_1px,transparent_1px)] [background-size:24px_24px] pointer-events-none" />
+    <div className="space-y-16 pb-16">
+      {/* Genesis Corporate Hero Section */}
+      <HeroSection />
 
-        <Container size="lg">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center relative z-10">
-            <div className="lg:col-span-7 space-y-6">
-              <div className="inline-flex items-center gap-2">
-                <Badge variant="accent" dot>
-                  Phase 1: Frontend Foundation Active
-                </Badge>
-              </div>
 
-              <h1 className="font-heading text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-tight">
-                Industrial Power Systems & Turnkey Engineering
-              </h1>
 
-              <p className="text-base sm:text-lg text-slate-300 leading-relaxed max-w-2xl">
-                Official web platform for <strong>Genesis Power Equipments Pvt. Ltd.</strong> Supplying heavy-duty diesel generators, acoustic enclosures, AMF panels, and industrial energy solutions.
-              </p>
-
-              <div className="flex flex-wrap gap-4 pt-2">
-                <Link to="/products">
-                  <Button
-                    variant="accent"
-                    size="lg"
-                    rightIcon={<ArrowRight className="w-4 h-4" />}
-                  >
-                    Explore Equipment Catalog
-                  </Button>
-                </Link>
-                <Link to="/request-quote">
-                  <Button
-                    variant="outline"
-                    size="lg"
-                    className="bg-slate-800 text-white border-slate-700 hover:bg-slate-700 hover:text-white"
-                  >
-                    Request Quotation
-                  </Button>
-                </Link>
-              </div>
-            </div>
-
-            {/* Architecture Card */}
-            <div className="lg:col-span-5">
-              <div className="bg-slate-800/90 rounded-2xl p-6 sm:p-8 border border-slate-700/80 shadow-2xl space-y-6">
-                <div className="flex items-center justify-between border-b border-slate-700 pb-4">
-                  <span className="text-xs font-bold uppercase tracking-wider text-amber-400">
-                    GenesisConnect Architecture
-                  </span>
-                  <Badge variant="primary" size="sm">v1.0.0</Badge>
-                </div>
-
-                <div className="space-y-4 text-xs">
-                  <div className="flex items-start gap-3 p-3.5 rounded-lg bg-slate-900/80 border border-slate-700/60">
-                    <Zap className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
-                    <div>
-                      <div className="font-semibold text-white">Genesis Design System</div>
-                      <div className="text-slate-400">Centralized industrial palette, accessible typography, and modular UI components.</div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start gap-3 p-3.5 rounded-lg bg-slate-900/80 border border-slate-700/60">
-                    <ShieldCheck className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" />
-                    <div>
-                      <div className="font-semibold text-white">Full Routing Foundation</div>
-                      <div className="text-slate-400">Configured public and admin routes, dynamic product detail slugging, and 404 handler.</div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start gap-3 p-3.5 rounded-lg bg-slate-900/80 border border-slate-700/60">
-                    <Cpu className="w-5 h-5 text-sky-400 flex-shrink-0 mt-0.5" />
-                    <div>
-                      <div className="font-semibold text-white">Phase 2 Ready</div>
-                      <div className="text-slate-400">Design foundation established; production catalog and customer flows to be connected in Phase 2.</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </Container>
-      </section>
 
       {/* Core Competencies Preview */}
       <section>

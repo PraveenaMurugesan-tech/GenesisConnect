@@ -57,11 +57,11 @@ export const Footer: React.FC = () => {
               </div>
             </div>
             <p className="text-sm text-slate-400 leading-relaxed max-w-sm">
-              Premier industrial equipment engineering company specializing in high-capacity diesel generators, customized captive power plants, synchronization panels, and round-the-clock maintenance services across South India.
+              Premier industrial equipment engineering company specializing in online double-conversion UPS systems, precision static and servo voltage stabilizers, CVCF converters, and dedicated lifecycle maintenance services across South India.
             </p>
             <div className="flex items-center gap-2 text-xs text-slate-400 bg-slate-800/60 p-2.5 rounded-lg border border-slate-800 max-w-sm">
               <ShieldCheck className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-              <span>ISO 9001:2015 Certified & CPCB-II Emission Compliant</span>
+              <span>Engineered Power Protection &amp; Technical Consultation</span>
             </div>
           </div>
 
@@ -95,26 +95,26 @@ export const Footer: React.FC = () => {
           {/* Equipment Solutions */}
           <div className="space-y-4">
             <h4 className="text-xs font-bold uppercase tracking-wider text-white">
-              Solutions
+              Equipment Lines
             </h4>
             <ul className="space-y-2.5 text-sm text-slate-400">
               <li>
-                <Link to="/products" className="hover:text-amber-400 transition-colors">Diesel Generator Sets</Link>
+                <Link to="/products/industrial-ups" className="hover:text-amber-400 transition-colors">Industrial Online UPS</Link>
               </li>
               <li>
-                <Link to="/products" className="hover:text-amber-400 transition-colors">Acoustic Enclosures</Link>
+                <Link to="/products/ct-scanner-ups" className="hover:text-amber-400 transition-colors">Medical &amp; CT Scanner UPS</Link>
               </li>
               <li>
-                <Link to="/products" className="hover:text-amber-400 transition-colors">AMF & Synchronization Panels</Link>
+                <Link to="/products/igbt-static-voltage-stabilizers" className="hover:text-amber-400 transition-colors">IGBT Static Voltage Stabilizers</Link>
+              </li>
+              <li>
+                <Link to="/products/servo-stabilizers" className="hover:text-amber-400 transition-colors">Servo Voltage Stabilizers</Link>
+              </li>
+              <li>
+                <Link to="/products/cvcf-systems" className="hover:text-amber-400 transition-colors">CVCF Frequency Converters</Link>
               </li>
               <li>
                 <Link to="/services" className="hover:text-amber-400 transition-colors">Preventive Maintenance AMCs</Link>
-              </li>
-              <li>
-                <Link to="/services" className="hover:text-amber-400 transition-colors">Overhaul & Load Testing</Link>
-              </li>
-              <li>
-                <Link to="/request-quote" className="hover:text-amber-400 transition-colors">Procurement Quotes</Link>
               </li>
             </ul>
           </div>

@@ -89,7 +89,7 @@ export const Navbar: React.FC = () => {
           <div className="flex items-center gap-4">
             <span className="hidden sm:inline-flex items-center gap-1.5 text-slate-400">
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" aria-hidden="true" />
-              ISO 9001:2015 & CPCB-II Certified
+              Industrial Power Systems &amp; Engineering Solutions
             </span>
             <span className="hidden sm:inline-block text-slate-600">|</span>
             <Link

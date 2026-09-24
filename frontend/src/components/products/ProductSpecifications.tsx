@@ -39,9 +39,9 @@ export const ProductSpecifications: React.FC<ProductSpecificationsProps> = ({
             <tbody className="divide-y divide-slate-100">
               {specList.map((spec, idx) => (
                 <tr key={idx} className="hover:bg-slate-50/80 transition-colors">
-                  <td className="px-6 py-3.5 font-semibold text-slate-600 w-1/3 sm:w-2/5">
+                  <th scope="row" className="px-6 py-3.5 font-semibold text-slate-600 w-1/3 sm:w-2/5 text-left">
                     {spec.label}
-                  </td>
+                  </th>
                   <td className="px-6 py-3.5 text-slate-800">
                     {spec.value}
                   </td>

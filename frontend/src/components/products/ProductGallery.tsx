@@ -106,9 +106,10 @@ export const ProductGallery: React.FC<ProductGalleryProps> = ({ product }) => {
               key={idx}
               type="button"
               role="tab"
+              aria-label={`View image ${idx + 1} of ${imagesList.length}`}
               aria-selected={activeIndex === idx}
               onClick={() => setActiveIndex(idx)}
-              className={`relative w-20 h-16 rounded-xl border-2 overflow-hidden flex-shrink-0 transition-all ${
+              className={`relative w-20 h-16 rounded-xl border-2 overflow-hidden flex-shrink-0 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 ${
                 activeIndex === idx
                   ? "border-sky-500 shadow-md ring-2 ring-sky-500/20"
                   : "border-slate-200 hover:border-slate-300 opacity-70"

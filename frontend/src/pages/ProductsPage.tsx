@@ -98,7 +98,7 @@ export const ProductsPage: React.FC = () => {
             </div>
 
             {/* Results Counter & Reset */}
-            <div className="flex items-center justify-between sm:justify-end gap-3 text-xs text-slate-500">
+            <div className="flex items-center justify-between sm:justify-end gap-3 text-xs text-slate-500" aria-live="polite">
               <span>
                 Showing <strong>{filteredProducts.length}</strong> of {totalProductCount} products
               </span>
@@ -106,7 +106,7 @@ export const ProductsPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={handleResetFilters}
-                  className="text-amber-600 hover:text-amber-700 font-semibold underline underline-offset-2 transition-colors"
+                  className="text-amber-600 hover:text-amber-700 font-semibold underline underline-offset-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 rounded"
                 >
                   Reset filters
                 </button>
@@ -115,7 +115,7 @@ export const ProductsPage: React.FC = () => {
           </div>
 
           {/* Category Tabs */}
-          <div className="border-t border-slate-100 pt-4 flex flex-wrap items-center gap-2">
+          <div className="border-t border-slate-100 pt-4 flex flex-wrap items-center gap-2" role="region" aria-label="Product category filter tabs">
             <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 mr-2">
               <Filter className="w-3.5 h-3.5" />
               <span>Category:</span>
@@ -220,7 +220,7 @@ export const ProductsPage: React.FC = () => {
             }
           />
         ) : filteredProducts.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
             {filteredProducts.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}

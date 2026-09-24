@@ -504,3 +504,15 @@ export const getProductsByCategory = (category: string): CatalogueProduct[] => {
   if (category === "All" || category === "All Categories") return getAllProducts();
   return PRODUCTS.filter((p) => p.category === category && p.isActive);
 };
+
+// Export validation utilities
+export * from "./validateProducts";
+
+// Run development-time catalog integrity check
+if (import.meta.env.DEV) {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  import("./validateProducts").then(({ runDevCatalogueValidation }) => {
+    runDevCatalogueValidation(PRODUCTS);
+  });
+}
+

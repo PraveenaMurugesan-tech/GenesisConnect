@@ -18,7 +18,7 @@ import { Select } from "../components/ui/Select";
 import { Textarea } from "../components/ui/Textarea";
 import { Button } from "../components/ui/Button";
 import { Card, CardContent } from "../components/ui/Card";
-import { getAllProducts } from "../data/products";
+import { getProducts } from "../services/productService";
 
 interface FormState {
   customerName: string;
@@ -43,7 +43,7 @@ export const RequestQuotePage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const preselectedProduct = searchParams.get("product") || "";
 
-  const allProducts = getAllProducts();
+  const allProducts = getProducts();
 
   const productOptions = [
     { value: "", label: "-- Select an Equipment Line --" },

@@ -13,7 +13,8 @@ import { SectionHeader } from "../components/common/SectionHeader";
 import { Button } from "../components/ui/Button";
 import { EmptyState } from "../components/ui/EmptyState";
 import { ProductCard } from "../components/products/ProductCard";
-import { getAllProducts, PRODUCT_CATEGORIES } from "../data/products";
+import { getProducts } from "../services/productService";
+import { PRODUCT_CATEGORIES } from "../types";
 
 export const ProductsPage: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>("All Categories");
@@ -21,7 +22,7 @@ export const ProductsPage: React.FC = () => {
 
   const categoryOptions = ["All Categories", ...PRODUCT_CATEGORIES];
 
-  const allProducts = useMemo(() => getAllProducts(), []);
+  const allProducts = useMemo(() => getProducts(), []);
 
   // Filter products based on category and search query
   const filteredProducts = useMemo(() => {

@@ -1,30 +1,48 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { ChevronRight, Zap, Shield, Cpu, Activity, Sparkles } from "lucide-react";
-import { CatalogueProduct } from "../../data/products";
+import { Product } from "../../types";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "../ui/Card";
 import { Badge } from "../common/Badge";
 import { Button } from "../ui/Button";
 
 export interface ProductCardProps {
-  product: CatalogueProduct;
+  product: Product;
   featured?: boolean;
 }
 
 export const ProductCard: React.FC<ProductCardProps> = ({ product, featured = false }) => {
+  const [imageError, setImageError] = useState(false);
+
   // Select an appropriate technical icon based on category/slug
   const getProductIcon = () => {
-    if (product.slug.includes("medical") || product.slug.includes("ct-scanner") || product.slug.includes("cath-lab") || product.slug.includes("ultrasound")) {
+    const slug = product.slug.toLowerCase();
+    const category = product.category.toLowerCase();
+    if (
+      slug.includes("medical") ||
+      slug.includes("ct-scanner") ||
+      slug.includes("cath-lab") ||
+      slug.includes("ultrasound") ||
+      category.includes("medical")
+    ) {
       return <Activity className="w-8 h-8 text-sky-600" aria-hidden="true" />;
     }
-    if (product.slug.includes("stabilizer")) {
+    if (slug.includes("stabilizer") || category.includes("stabilizer")) {
       return <Cpu className="w-8 h-8 text-amber-600" aria-hidden="true" />;
     }
-    if (product.slug.includes("cvcf") || product.slug.includes("custom")) {
+    if (slug.includes("cvcf") || slug.includes("custom") || category.includes("power conditioning")) {
       return <Sparkles className="w-8 h-8 text-indigo-600" aria-hidden="true" />;
     }
     return <Zap className="w-8 h-8 text-amber-500" aria-hidden="true" />;
   };
+
+  const primaryImage = product.image || (product.images && product.images.length > 0 ? product.images[0] : undefined);
+  const showImage = Boolean(primaryImage && !imageError);
+
+  const displayShortDescription =
+    product.shortDescription || product.short_description || product.description;
+
+  const highlights = product.keyHighlights || product.key_highlights || (product.features ? product.features.slice(0, 3) : []);
 
   return (
     <Card hover className="flex flex-col justify-between h-full group border-slate-200/90 transition-all duration-200">
@@ -36,6 +54,15 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, featured = fa
             className="absolute inset-0 opacity-10 bg-[radial-gradient(#38bdf8_1px,transparent_1px)] [background-size:16px_16px] pointer-events-none"
             aria-hidden="true"
           />
+
+          {showImage && (
+            <img
+              src={primaryImage}
+              alt={product.name}
+              onError={() => setImageError(true)}
+              className="absolute inset-0 w-full h-full object-cover opacity-25 group-hover:scale-105 transition-transform duration-300"
+            />
+          )}
 
           <div className="flex items-center justify-between relative z-10">
             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-semibold bg-slate-800/90 text-slate-200 border border-slate-700/80">
@@ -68,7 +95,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, featured = fa
         {/* Card Body */}
         <CardHeader className="pt-5 pb-3">
           <CardTitle className="text-lg leading-snug group-hover:text-sky-700 transition-colors">
-            <Link to={`/products/${product.slug}`} className="hover:underline focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-sky-600 rounded">
+            <Link
+              to={`/products/${product.slug}`}
+              className="hover:underline focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-sky-600 rounded"
+            >
               {product.name}
             </Link>
           </CardTitle>
@@ -78,15 +108,15 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, featured = fa
             </p>
           )}
           <CardDescription className="line-clamp-2 text-xs sm:text-sm text-slate-600 mt-2">
-            {product.short_description || product.description}
+            {displayShortDescription}
           </CardDescription>
         </CardHeader>
 
         {/* Key Highlights / Features */}
-        {product.key_highlights && product.key_highlights.length > 0 && (
+        {highlights && highlights.length > 0 && (
           <CardContent className="pt-0 pb-4">
             <div className="space-y-1.5 border-t border-slate-100 pt-3">
-              {product.key_highlights.slice(0, 3).map((item, idx) => (
+              {highlights.slice(0, 3).map((item, idx) => (
                 <div key={idx} className="flex items-center gap-2 text-xs text-slate-600">
                   <div className="w-1.5 h-1.5 rounded-full bg-amber-500 flex-shrink-0" />
                   <span className="truncate">{item}</span>

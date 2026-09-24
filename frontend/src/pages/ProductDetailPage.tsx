@@ -19,7 +19,7 @@ import { Container } from "../components/common/Container";
 import { Badge } from "../components/common/Badge";
 import { Button } from "../components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/Card";
-import { getProductBySlug } from "../data/products";
+import { getProductBySlug } from "../services/productService";
 
 export const ProductDetailPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();

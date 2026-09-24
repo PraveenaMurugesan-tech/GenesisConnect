@@ -20,6 +20,8 @@ import { PRODUCT_CATEGORIES } from "../types";
 export const ProductsPage: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>("All Categories");
   const [searchQuery, setSearchQuery] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const categoryOptions = ["All Categories", ...PRODUCT_CATEGORIES];
 
@@ -36,6 +38,14 @@ export const ProductsPage: React.FC = () => {
   const handleResetFilters = () => {
     setSelectedCategory("All Categories");
     setSearchQuery("");
+  };
+
+  const handleReload = () => {
+    setIsLoading(true);
+    setError(null);
+    setTimeout(() => {
+      setIsLoading(false);
+    }, 200);
   };
 
   const hasActiveFilters = selectedCategory !== "All Categories" || searchQuery.trim() !== "";
@@ -162,8 +172,54 @@ export const ProductsPage: React.FC = () => {
           )}
         </div>
 
-        {/* Product Grid */}
-        {filteredProducts.length > 0 ? (
+        {/* Product Grid & State Management */}
+        {isLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" aria-label="Loading products">
+            {[1, 2, 3, 4, 5, 6].map((n) => (
+              <div
+                key={n}
+                className="rounded-2xl border border-slate-200 bg-white p-5 animate-pulse space-y-4 shadow-sm"
+              >
+                <div className="h-44 bg-slate-200 rounded-xl" />
+                <div className="h-5 bg-slate-200 rounded-md w-3/4" />
+                <div className="space-y-2">
+                  <div className="h-3.5 bg-slate-100 rounded w-full" />
+                  <div className="h-3.5 bg-slate-100 rounded w-4/5" />
+                </div>
+                <div className="flex gap-2 pt-3">
+                  <div className="h-8 bg-slate-200 rounded-lg flex-1" />
+                  <div className="h-8 bg-slate-200 rounded-lg flex-1" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : error ? (
+          <EmptyState
+            title="Unable to load product catalogue"
+            description={error}
+            action={
+              <Button
+                variant="accent"
+                size="sm"
+                onClick={handleReload}
+              >
+                Retry
+              </Button>
+            }
+          />
+        ) : totalProductCount === 0 ? (
+          <EmptyState
+            title="No products are currently available."
+            description="The equipment catalogue is currently being synchronized. Please check back shortly or consult our engineering team directly."
+            action={
+              <Link to="/contact">
+                <Button variant="accent" size="sm">
+                  Contact Engineering
+                </Button>
+              </Link>
+            }
+          />
+        ) : filteredProducts.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {filteredProducts.map((product) => (
               <ProductCard key={product.id} product={product} />
@@ -171,8 +227,8 @@ export const ProductsPage: React.FC = () => {
           </div>
         ) : (
           <EmptyState
-            title="No matching equipment found"
-            description="Try selecting a different category or refining your search keywords."
+            title="No products found."
+            description="Try another search term or category."
             action={
               <Button variant="outline" size="sm" onClick={handleResetFilters}>
                 Clear All Filters

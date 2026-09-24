@@ -13,11 +13,13 @@ import { SectionHeader } from "../components/common/SectionHeader";
 import { Button } from "../components/ui/Button";
 import { EmptyState } from "../components/ui/EmptyState";
 import { ProductCard } from "../components/products/ProductCard";
-import { getAllProducts, PRODUCT_CATEGORIES, ProductCategory } from "../data/products";
+import { getAllProducts, PRODUCT_CATEGORIES } from "../data/products";
 
 export const ProductsPage: React.FC = () => {
-  const [selectedCategory, setSelectedCategory] = useState<ProductCategory>("All Categories");
+  const [selectedCategory, setSelectedCategory] = useState<string>("All Categories");
   const [searchQuery, setSearchQuery] = useState("");
+
+  const categoryOptions = ["All Categories", ...PRODUCT_CATEGORIES];
 
   const allProducts = useMemo(() => getAllProducts(), []);
 
@@ -100,7 +102,7 @@ export const ProductsPage: React.FC = () => {
               <span>Category:</span>
             </div>
 
-            {PRODUCT_CATEGORIES.map((category) => (
+            {categoryOptions.map((category) => (
               <button
                 key={category}
                 type="button"

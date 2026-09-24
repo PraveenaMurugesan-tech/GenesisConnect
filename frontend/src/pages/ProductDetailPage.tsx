@@ -211,16 +211,27 @@ export const ProductDetailPage: React.FC = () => {
                   <table className="w-full text-left text-xs sm:text-sm">
                     <tbody className="divide-y divide-slate-100">
                       {product.specifications &&
-                        Object.entries(product.specifications).map(([key, value], idx) => (
-                          <tr key={idx} className="hover:bg-slate-50/80 transition-colors">
-                            <td className="px-6 py-3.5 font-semibold text-slate-600 w-1/3 sm:w-2/5">
-                              {key}
-                            </td>
-                            <td className="px-6 py-3.5 text-slate-800">
-                              {String(value)}
-                            </td>
-                          </tr>
-                        ))}
+                        (Array.isArray(product.specifications)
+                          ? product.specifications.map((spec, idx) => (
+                              <tr key={idx} className="hover:bg-slate-50/80 transition-colors">
+                                <td className="px-6 py-3.5 font-semibold text-slate-600 w-1/3 sm:w-2/5">
+                                  {spec.label}
+                                </td>
+                                <td className="px-6 py-3.5 text-slate-800">
+                                  {spec.value}
+                                </td>
+                              </tr>
+                            ))
+                          : Object.entries(product.specifications).map(([key, value], idx) => (
+                              <tr key={idx} className="hover:bg-slate-50/80 transition-colors">
+                                <td className="px-6 py-3.5 font-semibold text-slate-600 w-1/3 sm:w-2/5">
+                                  {key}
+                                </td>
+                                <td className="px-6 py-3.5 text-slate-800">
+                                  {String(value)}
+                                </td>
+                              </tr>
+                            )))}
                     </tbody>
                   </table>
                 </CardContent>

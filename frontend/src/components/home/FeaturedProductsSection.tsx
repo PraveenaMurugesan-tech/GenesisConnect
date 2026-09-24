@@ -5,7 +5,7 @@ import { Container } from "../common/Container";
 import { SectionHeader } from "../common/SectionHeader";
 import { Button } from "../ui/Button";
 import { ProductCard } from "../products/ProductCard";
-import { getFeaturedProducts } from "../../data/products";
+import { getFeaturedProducts } from "../../services/productService";
 
 export const FeaturedProductsSection: React.FC = () => {
   const featuredProducts = getFeaturedProducts();

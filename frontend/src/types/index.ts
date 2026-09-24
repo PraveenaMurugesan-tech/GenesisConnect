@@ -2,6 +2,8 @@
 // GenesisConnect Data Types & Contracts
 // ==============================================================================
 
+import { Product } from "./product";
+
 export type UserRole = "SUPER_ADMIN" | "ADMIN";
 
 export interface User {
@@ -40,22 +42,7 @@ export interface ProductDocument {
   created_at: string;
 }
 
-export interface Product {
-  id: number;
-  name: string;
-  slug: string;
-  description?: string;
-  features?: string[];
-  specifications?: Record<string, any>;
-  category: string;
-  image_url?: string;
-  datasheet_url?: string;
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
-  images?: ProductImage[];
-  documents?: ProductDocument[];
-}
+export * from "./product";
 
 export interface Service {
   id: number;
@@ -76,7 +63,7 @@ export interface QuoteRequest {
   company_name?: string;
   email: string;
   phone: string;
-  product_id?: number;
+  product_id?: number | string;
   message?: string;
   status: QuoteStatus;
   created_at: string;

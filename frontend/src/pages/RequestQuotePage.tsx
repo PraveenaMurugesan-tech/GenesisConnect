@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import {
   CheckCircle2,
@@ -18,7 +18,8 @@ import { Select } from "../components/ui/Select";
 import { Textarea } from "../components/ui/Textarea";
 import { Button } from "../components/ui/Button";
 import { Card, CardContent } from "../components/ui/Card";
-import { getAllProducts } from "../data/products";
+import { getProducts, getProductBySlug } from "../services/productService";
+import { Product } from "../types";
 
 interface FormState {
   customerName: string;
@@ -43,9 +44,9 @@ export const RequestQuotePage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const preselectedProduct = searchParams.get("product") || "";
 
-  const allProducts = getAllProducts();
+  const allProducts: Product[] = useMemo(() => getProducts(), []);
 
-  const productOptions = [
+  const productOptions = useMemo(() => [
     { value: "", label: "-- Select an Equipment Line --" },
     ...allProducts.map((p) => ({
       value: p.slug,
@@ -53,7 +54,7 @@ export const RequestQuotePage: React.FC = () => {
     })),
     { value: "general_power_consultation", label: "General Power Engineering Consultation" },
     { value: "other_custom", label: "Other / Custom Specification" },
-  ];
+  ], [allProducts]);
 
   const [formData, setFormData] = useState<FormState>({
     customerName: "",
@@ -65,6 +66,10 @@ export const RequestQuotePage: React.FC = () => {
     message: "",
   });
 
+  const selectedProductDetails = useMemo(() => {
+    return formData.productSlug ? getProductBySlug(formData.productSlug) : undefined;
+  }, [formData.productSlug]);
+
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -73,12 +78,12 @@ export const RequestQuotePage: React.FC = () => {
   // Auto-select product if passed in URL query param
   useEffect(() => {
     if (preselectedProduct) {
-      const match = allProducts.find((p) => p.slug === preselectedProduct);
+      const match = getProductBySlug(preselectedProduct);
       if (match) {
         setFormData((prev) => ({ ...prev, productSlug: match.slug }));
       }
     }
-  }, [preselectedProduct, allProducts]);
+  }, [preselectedProduct]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
@@ -243,8 +248,37 @@ export const RequestQuotePage: React.FC = () => {
             </div>
           </div>
         ) : (
-          /* Main Quotation Form */
-          <Card className="shadow-industrial-lg">
+          <div className="space-y-6">
+            {/* Preselected Product Context Confirmation */}
+            {selectedProductDetails && (
+              <div className="p-4 rounded-xl bg-slate-900 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs shadow-md border border-slate-800">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 font-bold flex-shrink-0">
+                    ✓
+                  </div>
+                  <div>
+                    <div className="text-[11px] text-slate-400 uppercase font-mono tracking-wider">
+                      Selected Catalogue Item
+                    </div>
+                    <div className="font-semibold text-sm text-white">
+                      {selectedProductDetails.name}{" "}
+                      <span className="text-amber-400 text-xs font-normal">
+                        ({selectedProductDetails.category})
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <Link
+                  to={`/products/${selectedProductDetails.slug}`}
+                  className="text-sky-400 hover:text-sky-300 font-medium underline underline-offset-2 flex-shrink-0 self-start sm:self-auto"
+                >
+                  View Technical Specifications →
+                </Link>
+              </div>
+            )}
+
+            {/* Main Quotation Form */}
+            <Card className="shadow-industrial-lg">
             <CardContent className="p-6 sm:p-10">
               <form onSubmit={handleSubmit} className="space-y-6" noValidate>
                 {/* Section 1: Customer Details */}
@@ -373,7 +407,8 @@ export const RequestQuotePage: React.FC = () => {
               </form>
             </CardContent>
           </Card>
-        )}
+        </div>
+      )}
       </Container>
     </div>
   );

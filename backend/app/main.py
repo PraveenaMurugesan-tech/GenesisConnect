@@ -23,7 +23,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
-    description="Official Backend API for Genesis Power Equipments Pvt. Ltd. (GenesisConnect)",
+    description="Official Backend API for Genesis Power Equipments Pvt. Ltd. (GenesisConnect) — Product Catalogue & Customer Management System",
     version="1.0.0",
     openapi_url=f"{settings.API_V1_STR}/openapi.json",
     docs_url="/docs",
@@ -33,13 +33,23 @@ app = FastAPI(
 
 # CORS Configuration
 if settings.CORS_ORIGINS:
+    origins = [str(origin) for origin in settings.CORS_ORIGINS]
+    if settings.FRONTEND_URL and settings.FRONTEND_URL not in origins:
+        origins.append(settings.FRONTEND_URL)
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=[str(origin) for origin in settings.CORS_ORIGINS],
+        allow_origins=origins,
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+
+@app.get("/api/health", tags=["Health"], summary="System health probe")
+def api_health():
+    """Lightweight health check endpoint returning status ok."""
+    return {"status": "ok"}
+
 
 # Include API v1 Router
 app.include_router(api_router, prefix=settings.API_V1_STR)

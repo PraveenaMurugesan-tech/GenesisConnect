@@ -1,27 +1,118 @@
 // ==============================================================================
 // Genesis Power Equipments Pvt. Ltd. — Product Service Layer
-// Phase 3: Decoupled service abstraction for products catalogue
+// Phase 4: Production API-connected product service layer with Axios & FastAPI
 // ==============================================================================
 
 import { Product, ProductCategory, ProductFilterParams } from "../types";
 import { PRODUCTS, CatalogueProduct } from "../data/products";
+import apiClient from "./api";
+
+export type { Product, ProductCategory, ProductFilterParams };
+
+// Local in-memory cache populated from backend API
+let _apiProductsCache: Product[] | null = null;
 
 /**
- * Retrieve all active products with optional category and search filtering
+ * Fetch all active products from FastAPI backend (/api/v1/products)
+ * with optional category and search query parameters.
  */
-export const getProducts = (params?: ProductFilterParams): CatalogueProduct[] => {
-  let results = PRODUCTS.filter((p) => p.isActive);
+export const fetchProducts = async (
+  params?: ProductFilterParams
+): Promise<Product[]> => {
+  const queryParams: Record<string, string> = {};
 
-  if (!params) return results;
+  if (params?.category && params.category !== "All" && params.category !== "All Categories") {
+    queryParams.category = params.category;
+  }
+
+  if (params?.search && params.search.trim() !== "") {
+    queryParams.search = params.search.trim();
+  }
+
+  const response = await apiClient.get<Product[]>("/products", {
+    params: queryParams,
+  });
+
+  // Update in-memory cache when retrieving all products without filters
+  if (!params || (!params.category && !params.search)) {
+    _apiProductsCache = response.data;
+  }
+
+  return response.data;
+};
+
+/**
+ * Fetch single product technical specifications by unique slug from FastAPI backend (/api/v1/products/{slug})
+ */
+export const fetchProductBySlug = async (slug: string): Promise<Product | null> => {
+  if (!slug || slug.trim() === "") return null;
+
+  try {
+    const response = await apiClient.get<Product>(`/products/${encodeURIComponent(slug.trim())}`);
+    return response.data;
+  } catch (error: any) {
+    if (error.response?.status === 404) {
+      return null;
+    }
+    throw error;
+  }
+};
+
+/**
+ * Fetch active products filtered by equipment category
+ */
+export const fetchProductsByCategory = async (
+  category: ProductCategory | string
+): Promise<Product[]> => {
+  return fetchProducts({ category });
+};
+
+/**
+ * Search active products by keyword across name, description, and specs
+ */
+export const fetchSearchResults = async (
+  query: string,
+  category?: string
+): Promise<Product[]> => {
+  return fetchProducts({ search: query, category });
+};
+
+/**
+ * Fetch featured products for homepage showcase
+ */
+export const fetchFeaturedProducts = async (): Promise<Product[]> => {
+  const featuredSlugs = [
+    "industrial-ups",
+    "ct-scanner-ups",
+    "igbt-static-voltage-stabilizers",
+    "servo-stabilizers",
+  ];
+
+  try {
+    const products = await fetchProducts();
+    const featured = products.filter((p) => featuredSlugs.includes(p.slug) && (p.isActive ?? p.is_active));
+    return featured.length > 0 ? featured : products.slice(0, 4);
+  } catch (error) {
+    throw error;
+  }
+};
+
+// -----------------------------------------------------------------------------
+// Synchronous Accessors (Preserved for form dropdowns & backwards compatibility)
+// -----------------------------------------------------------------------------
+
+export const getProducts = (params?: ProductFilterParams): CatalogueProduct[] => {
+  const source = _apiProductsCache || PRODUCTS;
+  let results = source.filter((p) => p.isActive ?? p.is_active);
+
+  if (!params) return results as CatalogueProduct[];
 
   const { category, search } = params;
 
-  // Category filter
   if (category && category !== "All" && category !== "All Categories") {
     results = results.filter((p) => p.category === category);
   }
 
-  // Text search (name, category, shortDescription, tagline)
   if (search && search.trim() !== "") {
     const q = search.trim().toLowerCase();
     results = results.filter((p) => {
@@ -37,38 +128,28 @@ export const getProducts = (params?: ProductFilterParams): CatalogueProduct[] =>
     });
   }
 
-  return results;
+  return results as CatalogueProduct[];
 };
 
-/**
- * Look up a product by its URL-safe unique slug
- */
 export const getProductBySlug = (slug?: string): CatalogueProduct | undefined => {
   if (!slug || slug.trim() === "") return undefined;
   const normalized = slug.trim().toLowerCase();
-  return PRODUCTS.find((p) => p.slug.toLowerCase() === normalized && p.isActive);
+  const source = _apiProductsCache || PRODUCTS;
+  return source.find((p) => p.slug.toLowerCase() === normalized && (p.isActive ?? p.is_active)) as CatalogueProduct | undefined;
 };
 
-/**
- * Filter active products by category
- */
 export const getProductsByCategory = (category: string): CatalogueProduct[] => {
   if (!category || category === "All" || category === "All Categories") {
     return getProducts();
   }
-  return PRODUCTS.filter((p) => p.category === category && p.isActive);
+  const source = _apiProductsCache || PRODUCTS;
+  return source.filter((p) => p.category === category && (p.isActive ?? p.is_active)) as CatalogueProduct[];
 };
 
-/**
- * Search active products by keyword query across name, category, and description
- */
 export const searchProducts = (query: string, category?: string): CatalogueProduct[] => {
   return getProducts({ search: query, category });
 };
 
-/**
- * Highlight key industrial & healthcare systems for homepage showcase
- */
 export const getFeaturedProducts = (): CatalogueProduct[] => {
   const featuredSlugs = [
     "industrial-ups",
@@ -76,43 +157,21 @@ export const getFeaturedProducts = (): CatalogueProduct[] => {
     "igbt-static-voltage-stabilizers",
     "servo-stabilizers",
   ];
-  return PRODUCTS.filter((p) => featuredSlugs.includes(p.slug) && p.isActive);
+  const source = _apiProductsCache || PRODUCTS;
+  return source.filter((p) => featuredSlugs.includes(p.slug) && (p.isActive ?? p.is_active)) as CatalogueProduct[];
 };
 
-/**
- * Async API-Ready Service Layer
- * In Phase 4, the implementation inside these methods will call the FastAPI backend via Axios.
- * The consuming UI components remain unchanged.
- */
 export const productService = {
-  // Synchronous local data accessors
+  fetchProducts,
+  fetchProductBySlug,
+  fetchProductsByCategory,
+  fetchSearchResults,
+  fetchFeaturedProducts,
   getProducts,
   getProductBySlug,
   getProductsByCategory,
   searchProducts,
   getFeaturedProducts,
-
-  // Async API contract methods (Phase 4 mock/ready)
-  async fetchProducts(params?: ProductFilterParams): Promise<Product[]> {
-    // Phase 4: return (await apiClient.get<Product[]>("/products", { params })).data;
-    return Promise.resolve(getProducts(params));
-  },
-
-  async fetchProductBySlug(slug: string): Promise<Product | null> {
-    // Phase 4: return (await apiClient.get<Product>(`/products/${slug}`)).data;
-    const item = getProductBySlug(slug);
-    return Promise.resolve(item || null);
-  },
-
-  async fetchProductsByCategory(category: ProductCategory | string): Promise<Product[]> {
-    // Phase 4: return (await apiClient.get<Product[]>(`/products?category=${encodeURIComponent(category)}`)).data;
-    return Promise.resolve(getProductsByCategory(category));
-  },
-
-  async fetchSearchResults(query: string, category?: string): Promise<Product[]> {
-    // Phase 4: return (await apiClient.get<Product[]>(`/products?search=${encodeURIComponent(query)}`)).data;
-    return Promise.resolve(searchProducts(query, category));
-  },
 };
 
 export default productService;

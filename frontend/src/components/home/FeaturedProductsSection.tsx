@@ -1,14 +1,38 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
 import { Container } from "../common/Container";
 import { SectionHeader } from "../common/SectionHeader";
 import { Button } from "../ui/Button";
 import { ProductCard } from "../products/ProductCard";
-import { getFeaturedProducts } from "../../services/productService";
+import { fetchFeaturedProducts, getFeaturedProducts } from "../../services/productService";
+import { Product } from "../../types";
 
 export const FeaturedProductsSection: React.FC = () => {
-  const featuredProducts = getFeaturedProducts();
+  const [featuredProducts, setFeaturedProducts] = useState<Product[]>(getFeaturedProducts());
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+
+  useEffect(() => {
+    let isMounted = true;
+    fetchFeaturedProducts()
+      .then((data) => {
+        if (isMounted && data && data.length > 0) {
+          setFeaturedProducts(data);
+        }
+      })
+      .catch((err) => {
+        console.warn("Featured products API fetch fell back to cached catalog:", err);
+      })
+      .finally(() => {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   return (
     <section className="py-16 sm:py-20 bg-slate-50 border-b border-slate-200/80">
@@ -30,17 +54,25 @@ export const FeaturedProductsSection: React.FC = () => {
               rightIcon={<ArrowRight className="w-4 h-4" />}
               className="bg-white hover:bg-slate-50"
             >
-              View Full Catalog ({9} Products)
+              View Full Catalog (9 Products)
             </Button>
           </Link>
         </div>
 
         {/* Product Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
-          {featuredProducts.map((product) => (
-            <ProductCard key={product.id} product={product} featured />
-          ))}
-        </div>
+        {isLoading && featuredProducts.length === 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
+            {[1, 2, 3, 4].map((n) => (
+              <div key={n} className="h-80 bg-slate-200 rounded-2xl animate-pulse" />
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
+            {featuredProducts.map((product) => (
+              <ProductCard key={product.id} product={product} featured />
+            ))}
+          </div>
+        )}
 
         {/* Bottom catalogue encouragement banner */}
         <div className="mt-12 p-6 rounded-2xl bg-white border border-slate-200 shadow-industrial flex flex-col sm:flex-row items-center justify-between gap-4">

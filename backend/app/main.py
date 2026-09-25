@@ -29,10 +29,14 @@ async def lifespan(app: FastAPI):
     Application lifespan handler.
     Initializes database tables on startup if running in development mode.
     """
-    # In production, Alembic handles migrations. In dev, we can safely attempt schema creation.
+    if getattr(app.state, "testing", False) or settings.ENVIRONMENT == "test":
+        yield
+        return
+
     try:
-        Base.metadata.create_all(bind=engine)
-        logger.info("Database schema validated successfully.")
+        if check_db_connection():
+            Base.metadata.create_all(bind=engine)
+            logger.info("Database schema validated successfully.")
     except Exception as e:
         logger.warning(
             f"Database connection not yet active during startup ({e}). Continuing..."

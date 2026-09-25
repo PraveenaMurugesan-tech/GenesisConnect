@@ -21,15 +21,16 @@ class Base(DeclarativeBase):
 def get_engine():
     """Initializes SQLAlchemy engine configured for PostgreSQL."""
     db_url = settings.DATABASE_URL
-    # Ensure compatible PostgreSQL driver prefix if needed
     if db_url.startswith("postgres://"):
         db_url = db_url.replace("postgres://", "postgresql://", 1)
 
     connect_args = {}
-    # SQLite fallback for test suites if URL is sqlite
     if db_url.startswith("sqlite"):
         connect_args["check_same_thread"] = False
         return create_engine(db_url, connect_args=connect_args)
+
+    # For PostgreSQL / psycopg, set a sensible connection timeout
+    connect_args["connect_timeout"] = 3
 
     return create_engine(
         db_url,
@@ -66,7 +67,7 @@ def get_db() -> Generator[Session, None, None]:
 
 
 def check_db_connection() -> bool:
-    """Verifies active connectivity to the PostgreSQL database."""
+    """Verifies active connectivity to the database."""
     try:
         with engine.connect() as connection:
             connection.execute(text("SELECT 1"))

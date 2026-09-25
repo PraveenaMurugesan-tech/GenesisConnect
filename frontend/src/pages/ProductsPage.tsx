@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import {
   ChevronRight,
@@ -8,32 +8,64 @@ import {
   ArrowRight,
   Zap,
   X,
+  RefreshCw,
 } from "lucide-react";
 import { Container } from "../components/common/Container";
 import { SectionHeader } from "../components/common/SectionHeader";
 import { Button } from "../components/ui/Button";
 import { EmptyState } from "../components/ui/EmptyState";
 import { ProductCard } from "../components/products/ProductCard";
-import { getProducts } from "../services/productService";
-import { PRODUCT_CATEGORIES } from "../types";
+import { fetchProducts } from "../services/productService";
+import { Product, PRODUCT_CATEGORIES } from "../types";
 
 export const ProductsPage: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>("All Categories");
   const [searchQuery, setSearchQuery] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [products, setProducts] = useState<Product[]>([]);
+  const [totalCount, setTotalCount] = useState<number>(0);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const categoryOptions = ["All Categories", ...PRODUCT_CATEGORIES];
 
-  const totalProductCount = useMemo(() => getProducts().length, []);
+  // Debounce search query to prevent redundant API calls while typing
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+    }, 250);
+    return () => clearTimeout(handler);
+  }, [searchQuery]);
 
-  // Filter products using the centralized product service layer
-  const filteredProducts = useMemo(() => {
-    return getProducts({
-      category: selectedCategory === "All Categories" ? undefined : selectedCategory,
-      search: searchQuery,
-    });
-  }, [selectedCategory, searchQuery]);
+  // Load products from FastAPI backend
+  const loadProducts = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const data = await fetchProducts({
+        category: selectedCategory === "All Categories" ? undefined : selectedCategory,
+        search: debouncedSearch.trim() || undefined,
+      });
+      setProducts(data);
+      // Track total active products count
+      if (selectedCategory === "All Categories" && !debouncedSearch.trim()) {
+        setTotalCount(data.length);
+      }
+    } catch (err: any) {
+      console.error("Failed to load products from API:", err);
+      const message =
+        err.response?.data?.detail ||
+        err.message ||
+        "Unable to connect to GenesisConnect Product API. Please verify backend server connectivity.";
+      setError(message);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [selectedCategory, debouncedSearch]);
+
+  useEffect(() => {
+    loadProducts();
+  }, [loadProducts]);
 
   const handleResetFilters = () => {
     setSelectedCategory("All Categories");
@@ -41,11 +73,7 @@ export const ProductsPage: React.FC = () => {
   };
 
   const handleReload = () => {
-    setIsLoading(true);
-    setError(null);
-    setTimeout(() => {
-      setIsLoading(false);
-    }, 200);
+    loadProducts();
   };
 
   const hasActiveFilters = selectedCategory !== "All Categories" || searchQuery.trim() !== "";
@@ -100,7 +128,7 @@ export const ProductsPage: React.FC = () => {
             {/* Results Counter & Reset */}
             <div className="flex items-center justify-between sm:justify-end gap-3 text-xs text-slate-500" aria-live="polite">
               <span>
-                Showing <strong>{filteredProducts.length}</strong> of {totalProductCount} products
+                Showing <strong>{products.length}</strong> {totalCount > 0 ? `of ${totalCount}` : ""} products
               </span>
               {hasActiveFilters && (
                 <button
@@ -195,40 +223,29 @@ export const ProductsPage: React.FC = () => {
           </div>
         ) : error ? (
           <EmptyState
-            title="Unable to load product catalogue"
+            title="Unable to connect to product service"
             description={error}
             action={
               <Button
                 variant="accent"
                 size="sm"
+                leftIcon={<RefreshCw className="w-4 h-4" />}
                 onClick={handleReload}
               >
-                Retry
+                Retry Connection
               </Button>
             }
           />
-        ) : totalProductCount === 0 ? (
-          <EmptyState
-            title="No products are currently available."
-            description="The equipment catalogue is currently being synchronized. Please check back shortly or consult our engineering team directly."
-            action={
-              <Link to="/contact">
-                <Button variant="accent" size="sm">
-                  Contact Engineering
-                </Button>
-              </Link>
-            }
-          />
-        ) : filteredProducts.length > 0 ? (
+        ) : products.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-            {filteredProducts.map((product) => (
+            {products.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
           </div>
         ) : (
           <EmptyState
             title="No products found."
-            description="Try another search term or category."
+            description="No active equipment matches your current search criteria or category filter."
             action={
               <Button variant="outline" size="sm" onClick={handleResetFilters}>
                 Clear All Filters

@@ -1,162 +1,80 @@
-from typing import Any, List, Optional
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+# ==============================================================================
+# Genesis Power Equipments Pvt. Ltd. — GenesisConnect
+# Public Product Catalogue Endpoints (/api/v1/products)
+# ==============================================================================
+
+from typing import List, Optional
+from fastapi import APIRouter, Depends, HTTPException, Query, Path, status
 from sqlalchemy.orm import Session
-from app.api.deps import get_db, get_current_admin
-from app.models.product import Product, ProductImage, ProductDocument
-from app.models.user import User
-from app.schemas.product import (
-    ProductCreate,
-    ProductUpdate,
-    ProductResponse,
-    ProductDetailResponse,
-    ProductImageCreate,
-    ProductImageResponse,
-    ProductDocumentCreate,
-    ProductDocumentResponse,
-)
+from app.api.deps import get_db
+from app.services.product_service import ProductService
+from app.schemas.product import ProductResponse
 
 router = APIRouter(prefix="/products", tags=["Products"])
 
 
-@router.get("", response_model=List[ProductResponse])
-def get_products(
+@router.get(
+    "",
+    response_model=List[ProductResponse],
+    summary="List active products with optional category and search filters",
+    description=(
+        "Retrieves active equipment products from the Genesis Power Equipments catalogue. "
+        "Supports filtering by product category (e.g., 'UPS', 'Voltage Stabilizers') and "
+        "full-text keyword search across product name, description, and equipment specifications."
+    ),
+    responses={
+        200: {
+            "description": "Successfully retrieved list of active products.",
+        },
+    },
+)
+def list_products(
+    category: Optional[str] = Query(
+        None,
+        description="Filter by equipment category (e.g., 'UPS', 'Voltage Stabilizers', 'Power Conditioning')",
+    ),
+    search: Optional[str] = Query(
+        None,
+        description="Search keyword across product name, tagline, description, or slug",
+    ),
+    skip: int = Query(0, ge=0, description="Number of records to skip for pagination"),
+    limit: int = Query(50, ge=1, le=100, description="Maximum number of records to return"),
     db: Session = Depends(get_db),
-    skip: int = Query(0, ge=0),
-    limit: int = Query(50, ge=1, le=100),
-    category: Optional[str] = None,
-    search: Optional[str] = None,
-    active_only: bool = True,
-) -> Any:
-    """Public endpoint to list products with optional category filter and keyword search."""
-    query = db.query(Product)
-    if active_only:
-        query = query.filter(Product.is_active == True)
-    if category:
-        query = query.filter(Product.category.ilike(f"%{category}%"))
-    if search:
-        query = query.filter(
-            (Product.name.ilike(f"%{search}%")) | (Product.description.ilike(f"%{search}%"))
-        )
-    return query.order_by(Product.id.asc()).offset(skip).limit(limit).all()
+) -> List[ProductResponse]:
+    """Retrieve active products matching optional filter criteria."""
+    service = ProductService(db)
+    products = service.get_active_products(
+        category=category,
+        search=search,
+        skip=skip,
+        limit=limit,
+    )
+    return products
 
 
-@router.get("/{slug}", response_model=ProductDetailResponse)
+@router.get(
+    "/{slug}",
+    response_model=ProductResponse,
+    summary="Retrieve product specifications by unique slug",
+    description=(
+        "Fetches complete product technical specifications, feature lists, equipment highlights, "
+        "and application profiles for a given unique URL-safe slug."
+    ),
+    responses={
+        200: {"description": "Product found and returned successfully."},
+        404: {"description": "Product not found or currently inactive."},
+    },
+)
 def get_product_by_slug(
-    slug: str,
+    slug: str = Path(..., description="Unique URL-safe product slug (e.g. 'industrial-ups')"),
     db: Session = Depends(get_db),
-) -> Any:
-    """Public endpoint to retrieve a full product specification by unique slug."""
-    product = db.query(Product).filter(Product.slug == slug).first()
+) -> ProductResponse:
+    """Retrieve a single active product by slug."""
+    service = ProductService(db)
+    product = service.get_product_by_slug(slug)
     if not product:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Product with slug '{slug}' not found",
         )
     return product
-
-
-@router.post("", response_model=ProductResponse, status_code=status.HTTP_201_CREATED)
-def create_product(
-    product_in: ProductCreate,
-    db: Session = Depends(get_db),
-    current_admin: User = Depends(get_current_admin),
-) -> Any:
-    """Admin endpoint to create a new product entry in the catalog."""
-    existing_slug = db.query(Product).filter(Product.slug == product_in.slug).first()
-    if existing_slug:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"A product with slug '{product_in.slug}' already exists",
-        )
-    product = Product(**product_in.model_dump())
-    db.add(product)
-    db.commit()
-    db.refresh(product)
-    return product
-
-
-@router.put("/{product_id}", response_model=ProductResponse)
-def update_product(
-    product_id: int,
-    product_in: ProductUpdate,
-    db: Session = Depends(get_db),
-    current_admin: User = Depends(get_current_admin),
-) -> Any:
-    """Admin endpoint to update product details and specifications."""
-    product = db.query(Product).filter(Product.id == product_id).first()
-    if not product:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Product not found",
-        )
-    update_data = product_in.model_dump(exclude_unset=True)
-    if "slug" in update_data and update_data["slug"] != product.slug:
-        existing = db.query(Product).filter(Product.slug == update_data["slug"]).first()
-        if existing:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Slug '{update_data['slug']}' is already in use",
-            )
-    for field, value in update_data.items():
-        setattr(product, field, value)
-    db.commit()
-    db.refresh(product)
-    return product
-
-
-@router.delete("/{product_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_product(
-    product_id: int,
-    hard_delete: bool = False,
-    db: Session = Depends(get_db),
-    current_admin: User = Depends(get_current_admin),
-) -> None:
-    """Admin endpoint to deactivate (soft delete) or remove a product."""
-    product = db.query(Product).filter(Product.id == product_id).first()
-    if not product:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Product not found",
-        )
-    if hard_delete:
-        db.delete(product)
-    else:
-        product.is_active = False
-    db.commit()
-    return None
-
-
-@router.post("/{product_id}/images", response_model=ProductImageResponse, status_code=status.HTTP_201_CREATED)
-def add_product_image(
-    product_id: int,
-    image_in: ProductImageCreate,
-    db: Session = Depends(get_db),
-    current_admin: User = Depends(get_current_admin),
-) -> Any:
-    """Admin endpoint to associate an image URL with a product."""
-    product = db.query(Product).filter(Product.id == product_id).first()
-    if not product:
-        raise HTTPException(status_code=404, detail="Product not found")
-    image = ProductImage(product_id=product_id, **image_in.model_dump())
-    db.add(image)
-    db.commit()
-    db.refresh(image)
-    return image
-
-
-@router.post("/{product_id}/documents", response_model=ProductDocumentResponse, status_code=status.HTTP_201_CREATED)
-def add_product_document(
-    product_id: int,
-    document_in: ProductDocumentCreate,
-    db: Session = Depends(get_db),
-    current_admin: User = Depends(get_current_admin),
-) -> Any:
-    """Admin endpoint to attach a datasheet or manual URL to a product."""
-    product = db.query(Product).filter(Product.id == product_id).first()
-    if not product:
-        raise HTTPException(status_code=404, detail="Product not found")
-    doc = ProductDocument(product_id=product_id, **document_in.model_dump())
-    db.add(doc)
-    db.commit()
-    db.refresh(doc)
-    return doc

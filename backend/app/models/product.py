@@ -1,22 +1,36 @@
+# ==============================================================================
+# Genesis Power Equipments Pvt. Ltd. — GenesisConnect Database Models
+# Product & Equipment Catalogue Models
+# ==============================================================================
+
 from datetime import datetime, timezone
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Any
 from sqlalchemy import String, Boolean, DateTime, Text, JSON, Integer, BigInteger, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.base import Base
 
 
 class Product(Base):
+    """
+    Core Product entity matching Genesis Power Equipments catalogue specifications.
+    Supports structured JSON for technical specs, features, highlights, and images.
+    """
     __tablename__ = "products"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True, autoincrement=True)
     name: Mapped[str] = mapped_column(String(255), index=True, nullable=False)
     slug: Mapped[str] = mapped_column(String(255), unique=True, index=True, nullable=False)
-    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    features: Mapped[Optional[List[str]]] = mapped_column(JSON, nullable=True, default=list)
-    specifications: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSON, nullable=True, default=dict)
     category: Mapped[str] = mapped_column(String(100), index=True, nullable=False)
-    image_url: Mapped[Optional[str]] = mapped_column(String(512), nullable=True)
-    datasheet_url: Mapped[Optional[str]] = mapped_column(String(512), nullable=True)
+    tagline: Mapped[Optional[str]] = mapped_column(String(512), nullable=True)
+    short_description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    description: Mapped[str] = mapped_column(Text, nullable=False)
+    image: Mapped[Optional[str]] = mapped_column(String(512), nullable=True)
+    images: Mapped[Optional[List[str]]] = mapped_column(JSON, nullable=True, default=list)
+    features: Mapped[Optional[List[str]]] = mapped_column(JSON, nullable=True, default=list)
+    specifications: Mapped[Optional[Any]] = mapped_column(JSON, nullable=True, default=list)
+    datasheet: Mapped[Optional[str]] = mapped_column(String(512), nullable=True)
+    applications: Mapped[Optional[List[str]]] = mapped_column(JSON, nullable=True, default=list)
+    key_highlights: Mapped[Optional[List[str]]] = mapped_column(JSON, nullable=True, default=list)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, index=True, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
@@ -30,8 +44,29 @@ class Product(Base):
         nullable=False,
     )
 
-    # Relationships
-    images: Mapped[List["ProductImage"]] = relationship(
+    # Backwards compatibility properties
+    @property
+    def image_url(self) -> Optional[str]:
+        return self.image
+
+    @property
+    def datasheet_url(self) -> Optional[str]:
+        return self.datasheet
+
+    @property
+    def shortDescription(self) -> Optional[str]:
+        return self.short_description
+
+    @property
+    def keyHighlights(self) -> Optional[List[str]]:
+        return self.key_highlights
+
+    @property
+    def isActive(self) -> bool:
+        return self.is_active
+
+    # Optional relationships for extended gallery and documents
+    gallery_images: Mapped[List["ProductImage"]] = relationship(
         "ProductImage",
         back_populates="product",
         cascade="all, delete-orphan",
@@ -70,7 +105,7 @@ class ProductImage(Base):
         nullable=False,
     )
 
-    product: Mapped["Product"] = relationship("Product", back_populates="images")
+    product: Mapped["Product"] = relationship("Product", back_populates="gallery_images")
 
     def __repr__(self) -> str:
         return f"<ProductImage id={self.id} product_id={self.product_id}>"

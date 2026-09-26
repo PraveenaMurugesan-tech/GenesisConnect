@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { Zap, Lock, Mail, ArrowRight, AlertCircle, Shield } from "lucide-react";
-import { apiClient } from "../../services/api";
-import { AuthResponse } from "../../types";
+import { useAuth } from "../../auth/AuthContext";
 
 export const AdminLoginPage: React.FC = () => {
   const [email, setEmail] = useState("");
@@ -10,17 +9,18 @@ export const AdminLoginPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  const { login, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
+  const destination = (location.state as { from?: { pathname: string } })?.from?.pathname || "/admin/dashboard";
+
   // If already authenticated, redirect immediately
   useEffect(() => {
-    const token = localStorage.getItem("genesis_access_token");
-    if (token) {
-      const destination = (location.state as { from?: { pathname: string } })?.from?.pathname || "/admin/dashboard";
+    if (isAuthenticated) {
       navigate(destination, { replace: true });
     }
-  }, [navigate, location]);
+  }, [isAuthenticated, destination, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,24 +34,11 @@ export const AdminLoginPage: React.FC = () => {
     setLoading(true);
 
     try {
-      const response = await apiClient.post<AuthResponse>("/auth/login", {
+      await login({
         email: email.trim(),
         password,
       });
-
-      const { access_token, user } = response.data;
-      if (access_token) {
-        localStorage.setItem("genesis_access_token", access_token);
-        localStorage.setItem("genesis_admin_user", JSON.stringify(user));
-
-        // Dispatch storage event or custom event for auth listeners
-        window.dispatchEvent(new Event("auth-state-changed"));
-
-        const destination = (location.state as { from?: { pathname: string } })?.from?.pathname || "/admin/dashboard";
-        navigate(destination, { replace: true });
-      } else {
-        setErrorMessage("Authentication failed: No access token received.");
-      }
+      navigate(destination, { replace: true });
     } catch (err: any) {
       if (err.response) {
         const detail = err.response.data?.detail;

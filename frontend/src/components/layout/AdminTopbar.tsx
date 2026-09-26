@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Menu, ShieldCheck, LogOut, User as UserIcon } from "lucide-react";
+import { Menu, ShieldCheck, LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { User } from "../../types";
 

@@ -1,20 +1,43 @@
 from datetime import datetime, timedelta, timezone
 from typing import Any, Optional, Union
 from jose import jwt
-from passlib.context import CryptContext
+import bcrypt
+import logging
 from app.core.config import settings
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+logger = logging.getLogger("genesisconnect.security")
 
-
-def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """Verifies a plain text password against a stored bcrypt hash."""
-    return pwd_context.verify(plain_password, hashed_password)
+# Maximum byte length for standard bcrypt algorithm
+BCRYPT_MAX_BYTES = 72
 
 
 def get_password_hash(password: str) -> str:
-    """Generates a secure bcrypt hash for a plain text password."""
-    return pwd_context.hash(password)
+    """
+    Generates a secure salt and bcrypt hash for a plain text password.
+    Truncates to 72 bytes as per bcrypt specification to prevent overflow errors.
+    """
+    if not password:
+        raise ValueError("Password cannot be empty")
+    password_bytes = password.encode("utf-8")[:BCRYPT_MAX_BYTES]
+    salt = bcrypt.gensalt()
+    hashed = bcrypt.hashpw(password_bytes, salt)
+    return hashed.decode("utf-8")
+
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    """
+    Safely verifies a plain text password against a stored bcrypt hash.
+    Returns False on any malformed hash or verification failure without leaking details.
+    """
+    if not plain_password or not hashed_password:
+        return False
+    try:
+        password_bytes = plain_password.encode("utf-8")[:BCRYPT_MAX_BYTES]
+        hash_bytes = hashed_password.encode("utf-8")
+        return bcrypt.checkpw(password_bytes, hash_bytes)
+    except Exception as exc:
+        logger.warning(f"Password verification encountered error: {exc}")
+        return False
 
 
 def create_access_token(

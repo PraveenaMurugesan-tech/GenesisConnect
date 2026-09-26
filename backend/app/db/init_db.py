@@ -1,26 +1,14 @@
 from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.core.security import get_password_hash
-from app.models.user import User, UserRole
+from app.db.seed_admin import seed_admin
 from app.models.product import Product
 from app.models.service import Service
 
 
 def init_db(db: Session) -> None:
-    """Initializes the database with a default superadmin and introductory product data."""
-    admin = db.query(User).filter(User.email == settings.FIRST_SUPERADMIN_EMAIL).first()
-    if not admin:
-        admin = User(
-            name="Genesis Superadmin",
-            email=settings.FIRST_SUPERADMIN_EMAIL,
-            password_hash=get_password_hash(settings.FIRST_SUPERADMIN_PASSWORD),
-            role=UserRole.SUPER_ADMIN,
-            is_active=True,
-        )
-        db.add(admin)
-        db.commit()
-        db.refresh(admin)
-        print(f"Created initial superadmin: {settings.FIRST_SUPERADMIN_EMAIL}")
+    """Initializes the database with a default admin and introductory product data."""
+    seed_admin(db)
 
     # Seed introductory product sample if catalog is empty
     product_count = db.query(Product).count()

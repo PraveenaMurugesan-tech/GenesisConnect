@@ -9,7 +9,7 @@ export const apiClient = axios.create({
   },
 });
 
-// Request interceptor for injecting Bearer token
+// Request interceptor: Automatically inject Bearer JWT authorization token
 apiClient.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("genesis_access_token");
@@ -21,13 +21,27 @@ apiClient.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Response interceptor for handling 401 unauthenticated
+// Response interceptor: Handle 401 unauthenticated and token expiration centrally
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Clear token if expired or invalid
-      localStorage.removeItem("genesis_access_token");
+      const isLoginRequest = error.config?.url?.includes("/auth/login");
+      if (!isLoginRequest) {
+        // Clear expired or invalidated credentials
+        localStorage.removeItem("genesis_access_token");
+        localStorage.removeItem("genesis_admin_user");
+        window.dispatchEvent(new Event("auth-state-changed"));
+
+        // Redirect to admin login if currently on a protected admin page
+        if (
+          typeof window !== "undefined" &&
+          window.location.pathname.startsWith("/admin") &&
+          window.location.pathname !== "/admin/login"
+        ) {
+          window.location.href = "/admin/login";
+        }
+      }
     }
     return Promise.reject(error);
   }

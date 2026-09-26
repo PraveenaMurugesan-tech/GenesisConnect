@@ -1,6 +1,6 @@
 import json
-from typing import List, Union
-from pydantic import field_validator
+from typing import List, Union, Optional
+from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -40,14 +40,47 @@ class Settings(BaseSettings):
     # PostgreSQL Database Connection
     DATABASE_URL: str = "postgresql://postgres:postgres@localhost:5432/genesisconnect"
 
-    # JWT Authentication (Phase 5+)
-    SECRET_KEY: str = "genesisconnect_development_secret_key_change_in_production_32bytes"
-    ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24  # 1 day
+    # JWT Authentication (Phase 5)
+    JWT_SECRET_KEY: str = "genesisconnect_development_secret_key_change_in_production_32bytes"
+    JWT_ALGORITHM: str = "HS256"
+    JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24  # 1 day
 
-    # Superadmin Defaults (Phase 5+)
-    FIRST_SUPERADMIN_EMAIL: str = "admin@genesispower.in"
-    FIRST_SUPERADMIN_PASSWORD: str = "GenesisAdmin2026!"
+    # Aliases for backward compatibility
+    SECRET_KEY: Optional[str] = None
+    ALGORITHM: Optional[str] = None
+    ACCESS_TOKEN_EXPIRE_MINUTES: Optional[int] = None
+
+    # Initial Admin Defaults (Phase 5)
+    ADMIN_EMAIL: str = "admin@genesispower.in"
+    ADMIN_PASSWORD: str = "GenesisAdmin2026!"
+    FIRST_SUPERADMIN_EMAIL: Optional[str] = None
+    FIRST_SUPERADMIN_PASSWORD: Optional[str] = None
+
+    @model_validator(mode="after")
+    def sync_jwt_and_admin_settings(self):
+        # Sync JWT secret and algorithm
+        if self.SECRET_KEY and self.JWT_SECRET_KEY == "genesisconnect_development_secret_key_change_in_production_32bytes":
+            self.JWT_SECRET_KEY = self.SECRET_KEY
+        self.SECRET_KEY = self.JWT_SECRET_KEY
+
+        if self.ALGORITHM and self.JWT_ALGORITHM == "HS256":
+            self.JWT_ALGORITHM = self.ALGORITHM
+        self.ALGORITHM = self.JWT_ALGORITHM
+
+        if self.ACCESS_TOKEN_EXPIRE_MINUTES and self.JWT_ACCESS_TOKEN_EXPIRE_MINUTES == 1440:
+            self.JWT_ACCESS_TOKEN_EXPIRE_MINUTES = self.ACCESS_TOKEN_EXPIRE_MINUTES
+        self.ACCESS_TOKEN_EXPIRE_MINUTES = self.JWT_ACCESS_TOKEN_EXPIRE_MINUTES
+
+        # Sync Initial Admin
+        if self.FIRST_SUPERADMIN_EMAIL and self.ADMIN_EMAIL == "admin@genesispower.in":
+            self.ADMIN_EMAIL = self.FIRST_SUPERADMIN_EMAIL
+        self.FIRST_SUPERADMIN_EMAIL = self.ADMIN_EMAIL
+
+        if self.FIRST_SUPERADMIN_PASSWORD and self.ADMIN_PASSWORD == "GenesisAdmin2026!":
+            self.ADMIN_PASSWORD = self.FIRST_SUPERADMIN_PASSWORD
+        self.FIRST_SUPERADMIN_PASSWORD = self.ADMIN_PASSWORD
+
+        return self
 
     # Supabase Object Storage (Future Scope)
     SUPABASE_URL: str = ""

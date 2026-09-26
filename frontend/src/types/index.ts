@@ -22,6 +22,20 @@ export interface AuthResponse {
   user: User;
 }
 
+export interface LoginCredentials {
+  email: string;
+  password: string;
+}
+
+export interface AdminDashboardStats {
+  admin: User;
+  total_products: number;
+  active_products: number;
+  total_enquiries: string;
+  system_status: string;
+  api_version: string;
+}
+
 export interface ProductImage {
   id: number;
   product_id: number;

@@ -3,6 +3,7 @@ import { createBrowserRouter, Navigate } from "react-router-dom";
 // Layouts
 import { PublicLayout } from "../layouts/PublicLayout";
 import { AdminLayout } from "../layouts/AdminLayout";
+import { ProtectedRoute } from "../auth/ProtectedRoute";
 
 // Public Pages
 import { HomePage } from "../pages/HomePage";
@@ -53,7 +54,11 @@ export const router = createBrowserRouter([
   // Protected Admin Routes
   {
     path: "/admin",
-    element: <AdminLayout />,
+    element: (
+      <ProtectedRoute>
+        <AdminLayout />
+      </ProtectedRoute>
+    ),
     children: [
       { index: true, element: <Navigate to="/admin/dashboard" replace /> },
       { path: "dashboard", element: <AdminDashboardPage /> },

@@ -30,17 +30,19 @@ class ProductRepository:
 
     def get_all(
         self,
-        active_only: bool = True,
+        active_only: Optional[bool] = True,
         category: Optional[str] = None,
         search: Optional[str] = None,
         skip: int = 0,
         limit: int = 100,
     ) -> List[Product]:
-        """List products with optional category and keyword search filtering."""
+        """List products with optional active status, category, and keyword search filtering."""
         query = self.db.query(Product)
 
-        if active_only:
+        if active_only is True:
             query = query.filter(Product.is_active == True)
+        elif active_only is False:
+            query = query.filter(Product.is_active == False)
 
         if category and category.strip() and category.strip().lower() not in ["all", "all categories"]:
             query = query.filter(Product.category.ilike(f"%{category.strip()}%"))
@@ -61,15 +63,17 @@ class ProductRepository:
 
     def count(
         self,
-        active_only: bool = True,
+        active_only: Optional[bool] = True,
         category: Optional[str] = None,
         search: Optional[str] = None,
     ) -> int:
         """Total count of products matching filter criteria."""
         query = self.db.query(func.count(Product.id))
 
-        if active_only:
+        if active_only is True:
             query = query.filter(Product.is_active == True)
+        elif active_only is False:
+            query = query.filter(Product.is_active == False)
 
         if category and category.strip() and category.strip().lower() not in ["all", "all categories"]:
             query = query.filter(Product.category.ilike(f"%{category.strip()}%"))

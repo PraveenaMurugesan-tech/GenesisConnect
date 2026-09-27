@@ -62,7 +62,36 @@ class ProductService:
             search=search,
         )
 
-    # Internal foundation CRUD (reserved for future admin management)
+    def get_admin_products(
+        self,
+        category: Optional[str] = None,
+        search: Optional[str] = None,
+        is_active: Optional[bool] = None,
+        skip: int = 0,
+        limit: int = 100,
+    ) -> List[Product]:
+        """Fetch products for admin management with optional status, category, and search filters."""
+        return self.repository.get_all(
+            active_only=is_active,
+            category=category,
+            search=search,
+            skip=skip,
+            limit=limit,
+        )
+
+    def count_admin_products(
+        self,
+        category: Optional[str] = None,
+        search: Optional[str] = None,
+        is_active: Optional[bool] = None,
+    ) -> int:
+        """Count total products matching admin filters."""
+        return self.repository.count(
+            active_only=is_active,
+            category=category,
+            search=search,
+        )
+
     def create_product(self, product_in: ProductCreate) -> Product:
         """Create and validate a new product record."""
         existing = self.repository.get_by_slug(product_in.slug, active_only=False)
@@ -81,9 +110,28 @@ class ProductService:
                 raise ValueError(f"Slug '{product_in.slug}' is already taken")
         return self.repository.update(product, product_in)
 
+    def toggle_product_status(self, product_id: int, is_active: Optional[bool] = None) -> Optional[Product]:
+        """Toggle or explicitly set the active status of a product."""
+        product = self.repository.get_by_id(product_id)
+        if not product:
+            return None
+        new_status = not product.is_active if is_active is None else is_active
+        return self.repository.update(product, {"is_active": new_status})
+
     def deactivate_product(self, product_id: int) -> Optional[Product]:
         """Soft-deactivate a product by ID."""
         product = self.repository.get_by_id(product_id)
         if not product:
             return None
         return self.repository.deactivate(product)
+
+    def delete_product(self, product_id: int, hard_delete: bool = False) -> bool:
+        """Delete or soft-deactivate a product by ID."""
+        product = self.repository.get_by_id(product_id)
+        if not product:
+            return False
+        if hard_delete:
+            self.repository.delete(product)
+        else:
+            self.repository.deactivate(product)
+        return True

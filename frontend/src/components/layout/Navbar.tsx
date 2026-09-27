@@ -11,6 +11,7 @@ import {
   Lock,
 } from "lucide-react";
 import { Button } from "../ui/Button";
+import { AnnouncementBanner } from "../common/AnnouncementBanner";
 
 export interface NavItem {
   name: string;
@@ -64,6 +65,9 @@ export const Navbar: React.FC = () => {
 
   return (
     <header className="sticky top-0 z-50 bg-white shadow-sm border-b border-slate-200">
+      {/* Dynamic Announcement Banner */}
+      <AnnouncementBanner />
+
       {/* Top Utility & Contact Bar */}
       <div className="bg-slate-900 text-slate-300 text-xs py-2 px-4 sm:px-6 lg:px-8 border-b border-slate-800">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-2">

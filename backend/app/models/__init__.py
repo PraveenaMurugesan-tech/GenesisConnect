@@ -12,14 +12,20 @@ from app.models.enquiry import (
     ContactStatus,
 )
 
+from app.models.site_content import SiteContent
+from app.models.announcement import Announcement
+
 __all__ = [
     "Base",
     "User",
     "UserRole",
+    "Admin",
     "Product",
     "ProductImage",
     "ProductDocument",
     "Service",
+    "SiteContent",
+    "Announcement",
     "QuoteRequest",
     "QuoteStatus",
     "CustomRequirement",

@@ -10,8 +10,13 @@ import {
 } from "lucide-react";
 import { Container } from "../common/Container";
 import { Button } from "../ui/Button";
+import { HomepageContent } from "../../types";
 
-export const HeroSection: React.FC = () => {
+export interface HeroSectionProps {
+  content?: Partial<HomepageContent>;
+}
+
+export const HeroSection: React.FC<HeroSectionProps> = ({ content }) => {
   return (
     <section className="relative bg-slate-950 text-white pt-16 pb-20 sm:pt-24 sm:pb-28 overflow-hidden border-b border-slate-800">
       {/* Background industrial grid & glow effects */}
@@ -42,37 +47,42 @@ export const HeroSection: React.FC = () => {
 
             {/* Main Headline */}
             <h1 className="font-heading text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-[1.12]">
-              Industrial Power Protection &amp;{" "}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-sky-400 via-sky-300 to-amber-300">
-                Precision Voltage Systems
-              </span>
+              {content?.hero_heading || (
+                <>
+                  Industrial Power Protection &amp;{" "}
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-sky-400 via-sky-300 to-amber-300">
+                    Precision Voltage Systems
+                  </span>
+                </>
+              )}
             </h1>
 
             {/* Sub-text */}
             <p className="text-base sm:text-lg text-slate-300 leading-relaxed max-w-2xl">
-              Engineering reliable online double-conversion UPS systems, high-speed static &amp; servo voltage stabilizers, CVCF converters, and specialized medical imaging power protection for continuous industrial operations.
+              {content?.hero_subheading ||
+                "Engineering reliable online double-conversion UPS systems, high-speed static & servo voltage stabilizers, CVCF converters, and specialized medical imaging power protection for continuous industrial operations."}
             </p>
 
             {/* Action Buttons */}
             <div className="flex flex-wrap items-center gap-4 pt-2">
-              <Link to="/request-quote">
+              <Link to={content?.secondary_cta_link || "/request-quote"}>
                 <Button
                   variant="accent"
                   size="lg"
                   rightIcon={<ArrowRight className="w-4 h-4" />}
                   className="shadow-lg shadow-amber-900/30 font-semibold"
                 >
-                  Request a Quote
+                  {content?.secondary_cta_text || "Request a Quote"}
                 </Button>
               </Link>
 
-              <Link to="/products">
+              <Link to={content?.primary_cta_link || "/products"}>
                 <Button
                   variant="outline"
                   size="lg"
                   className="bg-slate-900/80 text-white border-slate-700 hover:bg-slate-800 hover:border-slate-600"
                 >
-                  Explore Products
+                  {content?.primary_cta_text || "Explore Products"}
                 </Button>
               </Link>
             </div>

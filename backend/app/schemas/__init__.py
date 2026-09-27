@@ -42,6 +42,17 @@ from app.schemas.enquiry import (
     ContactMessageUpdateStatus,
     ContactMessageResponse,
 )
+from app.schemas.site_content import (
+    HomepageContentSchema,
+    ContactInfoSchema,
+    SiteContentResponse,
+)
+from app.schemas.announcement import (
+    AnnouncementBase,
+    AnnouncementCreate,
+    AnnouncementUpdate,
+    AnnouncementResponse,
+)
 
 __all__ = [
     "UserBase",
@@ -80,4 +91,11 @@ __all__ = [
     "ContactMessageCreate",
     "ContactMessageUpdateStatus",
     "ContactMessageResponse",
+    "HomepageContentSchema",
+    "ContactInfoSchema",
+    "SiteContentResponse",
+    "AnnouncementBase",
+    "AnnouncementCreate",
+    "AnnouncementUpdate",
+    "AnnouncementResponse",
 ]

@@ -12,6 +12,8 @@ from sqlalchemy.pool import StaticPool
 
 from app.main import app
 from app.core.database import Base, get_db
+from app.models.user import User, UserRole
+from app.core.security import get_password_hash, create_access_token
 from app.db.seed_products import seed_products
 
 # Isolated in-memory SQLite database specifically for test runner
@@ -32,14 +34,32 @@ TestingSessionLocal = sessionmaker(
 
 @pytest.fixture(scope="session", autouse=True)
 def setup_test_database():
-    """Create tables and seed initial catalogue products in memory."""
+    """Create tables and seed initial catalogue products and test admin in memory."""
     app.state.testing = True
     Base.metadata.create_all(bind=test_engine)
     with TestingSessionLocal() as session:
         seed_products(session)
+        admin = User(
+            name="Genesis System Administrator",
+            email="admin@genesispower.in",
+            password_hash=get_password_hash("AdminPassword123!"),
+            role=UserRole.ADMIN,
+            is_active=True,
+        )
+        session.add(admin)
+        session.commit()
     yield
     Base.metadata.drop_all(bind=test_engine)
     app.state.testing = False
+
+
+@pytest.fixture(scope="function")
+def admin_headers() -> dict:
+    """Provides a valid Authorization Bearer header for the session test admin."""
+    with TestingSessionLocal() as session:
+        admin = session.query(User).filter(User.email == "admin@genesispower.in").first()
+        token = create_access_token(subject=admin.id)
+        return {"Authorization": f"Bearer {token}"}
 
 
 @pytest.fixture(scope="function")

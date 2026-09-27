@@ -9,6 +9,8 @@ from app.api.v1.endpoints import (
     custom_requirements,
     contact,
     storage,
+    content,
+    announcements,
 )
 
 api_router = APIRouter()
@@ -23,3 +25,5 @@ api_router.include_router(quotes.router)
 api_router.include_router(custom_requirements.router)
 api_router.include_router(contact.router)
 api_router.include_router(storage.router)
+api_router.include_router(content.router)
+api_router.include_router(announcements.router)

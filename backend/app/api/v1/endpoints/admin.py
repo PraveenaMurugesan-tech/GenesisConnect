@@ -15,6 +15,7 @@ from app.services.product_service import ProductService
 from app.schemas.admin import AdminDashboardResponse
 from app.schemas.auth import UserResponse
 from app.schemas.product import ProductResponse, ProductCreate, ProductUpdate
+from app.schemas.service import ServiceResponse, ServiceCreate, ServiceUpdate
 
 router = APIRouter(prefix="/admin", tags=["Admin Control System"])
 
@@ -189,4 +190,163 @@ def admin_delete_product(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Product with ID {product_id} not found",
         )
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+# ==============================================================================
+# Protected Admin Service Management Endpoints
+# ==============================================================================
+
+@router.get(
+    "/services",
+    response_model=List[ServiceResponse],
+    summary="List all engineering services (Admin)",
+)
+def admin_list_services(
+    search: Optional[str] = Query(None, description="Search keyword"),
+    is_active: Optional[bool] = Query(None, description="Filter by active status"),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=200),
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+) -> List[ServiceResponse]:
+    query = db.query(Service)
+    if is_active is True:
+        query = query.filter(Service.is_active == True)
+    elif is_active is False:
+        query = query.filter(Service.is_active == False)
+
+    if search and search.strip():
+        term = f"%{search.strip()}%"
+        query = query.filter(
+            (Service.title.ilike(term)) | (Service.description.ilike(term)) | (Service.slug.ilike(term))
+        )
+
+    return query.order_by(Service.id.asc()).offset(skip).limit(limit).all()
+
+
+@router.post(
+    "/services",
+    response_model=ServiceResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Create a new engineering service (Admin)",
+)
+def admin_create_service(
+    service_in: ServiceCreate,
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+) -> ServiceResponse:
+    existing = db.query(Service).filter(Service.slug == service_in.slug).first()
+    if existing:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Service with slug '{service_in.slug}' already exists",
+        )
+    service = Service(**service_in.model_dump())
+    db.add(service)
+    db.commit()
+    db.refresh(service)
+    return service
+
+
+@router.get(
+    "/services/{service_id}",
+    response_model=ServiceResponse,
+    summary="Retrieve service by ID (Admin)",
+)
+def admin_get_service_by_id(
+    service_id: int = Path(..., ge=1),
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+) -> ServiceResponse:
+    service = db.query(Service).filter(Service.id == service_id).first()
+    if not service:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Service with ID {service_id} not found",
+        )
+    return service
+
+
+@router.put(
+    "/services/{service_id}",
+    response_model=ServiceResponse,
+    summary="Update engineering service details (Admin)",
+)
+def admin_update_service(
+    service_id: int = Path(..., ge=1),
+    service_in: ServiceUpdate = ...,
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+) -> ServiceResponse:
+    service = db.query(Service).filter(Service.id == service_id).first()
+    if not service:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Service with ID {service_id} not found",
+        )
+
+    if service_in.slug and service_in.slug != service.slug:
+        existing = db.query(Service).filter(Service.slug == service_in.slug).first()
+        if existing and existing.id != service_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Service slug '{service_in.slug}' is already taken",
+            )
+
+    update_data = service_in.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(service, field, value)
+
+    db.commit()
+    db.refresh(service)
+    return service
+
+
+@router.patch(
+    "/services/{service_id}/status",
+    response_model=ServiceResponse,
+    summary="Toggle or update service active status (Admin)",
+)
+def admin_toggle_service_status(
+    service_id: int = Path(..., ge=1),
+    payload: Optional[StatusUpdatePayload] = None,
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+) -> ServiceResponse:
+    service = db.query(Service).filter(Service.id == service_id).first()
+    if not service:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Service with ID {service_id} not found",
+        )
+    new_status = not service.is_active if not payload or payload.is_active is None else payload.is_active
+    service.is_active = new_status
+    db.commit()
+    db.refresh(service)
+    return service
+
+
+@router.delete(
+    "/services/{service_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Delete or soft-deactivate service (Admin)",
+)
+def admin_delete_service(
+    service_id: int = Path(..., ge=1),
+    hard_delete: bool = Query(False, description="Set true for permanent database deletion"),
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+) -> Response:
+    service = db.query(Service).filter(Service.id == service_id).first()
+    if not service:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Service with ID {service_id} not found",
+        )
+    if hard_delete:
+        db.delete(service)
+    else:
+        service.is_active = False
+    db.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)

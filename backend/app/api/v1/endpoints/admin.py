@@ -12,10 +12,12 @@ from app.models.user import User
 from app.models.service import Service
 from app.repositories.product_repository import ProductRepository
 from app.services.product_service import ProductService
+from app.services.content_service import ContentService
 from app.schemas.admin import AdminDashboardResponse
 from app.schemas.auth import UserResponse
 from app.schemas.product import ProductResponse, ProductCreate, ProductUpdate
 from app.schemas.service import ServiceResponse, ServiceCreate, ServiceUpdate
+from app.schemas.site_content import HomepageContentSchema, ContactInfoSchema
 
 router = APIRouter(prefix="/admin", tags=["Admin Control System"])
 
@@ -350,3 +352,61 @@ def admin_delete_service(
         service.is_active = False
     db.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+# ==============================================================================
+# Protected Admin Site Content Management Endpoints
+# ==============================================================================
+
+@router.get(
+    "/content/homepage",
+    response_model=HomepageContentSchema,
+    summary="Get managed homepage content (Admin)",
+)
+def admin_get_homepage_content(
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+) -> HomepageContentSchema:
+    service = ContentService(db)
+    return service.get_homepage_content()
+
+
+@router.put(
+    "/content/homepage",
+    response_model=HomepageContentSchema,
+    summary="Update managed homepage content (Admin)",
+)
+def admin_update_homepage_content(
+    payload: HomepageContentSchema,
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+) -> HomepageContentSchema:
+    service = ContentService(db)
+    return service.update_homepage_content(payload)
+
+
+@router.get(
+    "/content/contact",
+    response_model=ContactInfoSchema,
+    summary="Get corporate contact information (Admin)",
+)
+def admin_get_contact_info(
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+) -> ContactInfoSchema:
+    service = ContentService(db)
+    return service.get_contact_info()
+
+
+@router.put(
+    "/content/contact",
+    response_model=ContactInfoSchema,
+    summary="Update corporate contact information (Admin)",
+)
+def admin_update_contact_info(
+    payload: ContactInfoSchema,
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+) -> ContactInfoSchema:
+    service = ContentService(db)
+    return service.update_contact_info(payload)

@@ -34,6 +34,50 @@ export interface AdminDashboardStats {
   total_enquiries: string;
   system_status: string;
   api_version: string;
+  inactive_products?: number;
+  total_services?: number;
+}
+
+export interface HomepageContent {
+  hero_heading: string;
+  hero_subheading: string;
+  primary_cta_text: string;
+  primary_cta_link: string;
+  secondary_cta_text: string;
+  secondary_cta_link: string;
+  featured_product_slugs: string[];
+  featured_service_slugs: string[];
+}
+
+export interface ContactInfo {
+  company_name: string;
+  brand_name: string;
+  tagline: string;
+  address_line1: string;
+  city: string;
+  state: string;
+  postal_code: string;
+  country: string;
+  phone_board: string;
+  phone_hotline: string;
+  email_general: string;
+  email_sales: string;
+  email_support: string;
+  office_hours: string;
+  support_hours: string;
+}
+
+export interface Announcement {
+  id: number;
+  title: string;
+  content: string;
+  link_url?: string;
+  link_text?: string;
+  is_active: boolean;
+  start_date?: string;
+  end_date?: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface ProductImage {

@@ -3,7 +3,6 @@ import { useNavigate, Link } from "react-router-dom";
 import {
   Save,
   ArrowLeft,
-  Plus,
   Trash2,
   AlertCircle,
   CheckCircle2,
@@ -12,12 +11,12 @@ import {
   Layers,
   Image,
   Tag,
-  Sliders,
 } from "lucide-react";
 import { Button } from "../ui/Button";
 import { Card, CardContent } from "../ui/Card";
 import { apiClient } from "../../services/api";
 import { Product, PRODUCT_CATEGORIES, ProductCategory, ProductSpecification } from "../../types";
+import { SpecificationEditor } from "./SpecificationEditor";
 
 interface ProductFormProps {
   productId?: string | number;
@@ -226,21 +225,6 @@ export const ProductForm: React.FC<ProductFormProps> = ({ productId }) => {
     } finally {
       setSubmitting(false);
     }
-  };
-
-  // Specification Row Helpers
-  const addSpecificationRow = () => {
-    setSpecifications([...specifications, { label: "", value: "" }]);
-  };
-
-  const updateSpecificationRow = (index: number, field: "label" | "value", val: string) => {
-    const updated = [...specifications];
-    updated[index][field] = val;
-    setSpecifications(updated);
-  };
-
-  const removeSpecificationRow = (index: number) => {
-    setSpecifications(specifications.filter((_, i) => i !== index));
   };
 
   // Dynamic Array Helpers (Features, Applications, Highlights)
@@ -542,64 +526,12 @@ export const ProductForm: React.FC<ProductFormProps> = ({ productId }) => {
 
       {/* Section 2: Structured Technical Specifications */}
       <Card>
-        <CardContent className="p-6 sm:p-8 space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
-            <div>
-              <h2 className="font-heading text-base font-bold text-slate-900 flex items-center gap-2">
-                <Sliders className="w-4 h-4 text-amber-600" />
-                Technical Specifications Table
-              </h2>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Structured parameter labels and engineering values (e.g. Capacity, Output Waveform, Topology).
-              </p>
-            </div>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={addSpecificationRow}
-              leftIcon={<Plus className="w-3.5 h-3.5" />}
-            >
-              Add Parameter Row
-            </Button>
-          </div>
-
-          {clientErrors.specifications && (
-            <p className="text-xs text-rose-600">{clientErrors.specifications}</p>
-          )}
-
-          <div className="space-y-3">
-            {specifications.map((spec, index) => (
-              <div key={index} className="flex items-center gap-3">
-                <div className="w-1/3">
-                  <input
-                    type="text"
-                    value={spec.label}
-                    onChange={(e) => updateSpecificationRow(index, "label", e.target.value)}
-                    placeholder="Parameter (e.g. Output Voltage)"
-                    className="w-full px-3 py-2 text-xs font-semibold text-slate-800 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
-                  />
-                </div>
-                <div className="flex-1">
-                  <input
-                    type="text"
-                    value={spec.value}
-                    onChange={(e) => updateSpecificationRow(index, "value", e.target.value)}
-                    placeholder="Engineering Rating (e.g. 415V 3-Phase ±1%)"
-                    className="w-full px-3 py-2 text-xs text-slate-800 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
-                  />
-                </div>
-                <button
-                  type="button"
-                  onClick={() => removeSpecificationRow(index)}
-                  title="Remove this parameter"
-                  className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-            ))}
-          </div>
+        <CardContent className="p-6 sm:p-8">
+          <SpecificationEditor
+            specifications={specifications}
+            onChange={setSpecifications}
+            error={clientErrors.specifications}
+          />
         </CardContent>
       </Card>
 

@@ -12,6 +12,8 @@ class AdminDashboardResponse(BaseModel):
     admin: UserResponse
     total_products: int
     active_products: int
+    inactive_products: int = 0
+    total_services: int = 0
     total_enquiries: str = "Not available"
     system_status: str = "Operational"
     api_version: str = "1.0.0"

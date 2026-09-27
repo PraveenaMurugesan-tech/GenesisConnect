@@ -45,11 +45,14 @@ def get_admin_dashboard(
     total_products = product_repo.count(active_only=None)
     active_products = product_repo.count(active_only=True)
     inactive_products = product_repo.count(active_only=False)
+    total_services = db.query(Service).count()
 
     return AdminDashboardResponse(
         admin=UserResponse.model_validate(current_admin),
         total_products=total_products,
         active_products=active_products,
+        inactive_products=inactive_products,
+        total_services=total_services,
         total_enquiries="Not available (Phase 7)",
         system_status="Operational",
         api_version="1.0.0",

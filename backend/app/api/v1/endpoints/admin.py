@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 from app.api.deps import get_db, get_current_admin
 from app.models.user import User
 from app.models.service import Service
+from app.models.announcement import Announcement
 from app.repositories.product_repository import ProductRepository
 from app.services.product_service import ProductService
 from app.services.content_service import ContentService
@@ -18,6 +19,7 @@ from app.schemas.auth import UserResponse
 from app.schemas.product import ProductResponse, ProductCreate, ProductUpdate
 from app.schemas.service import ServiceResponse, ServiceCreate, ServiceUpdate
 from app.schemas.site_content import HomepageContentSchema, ContactInfoSchema
+from app.schemas.announcement import AnnouncementResponse, AnnouncementCreate, AnnouncementUpdate
 
 router = APIRouter(prefix="/admin", tags=["Admin Control System"])
 
@@ -410,3 +412,155 @@ def admin_update_contact_info(
 ) -> ContactInfoSchema:
     service = ContentService(db)
     return service.update_contact_info(payload)
+
+
+# ==============================================================================
+# Protected Admin Announcement Management Endpoints
+# ==============================================================================
+
+@router.get(
+    "/announcements",
+    response_model=List[AnnouncementResponse],
+    summary="List all announcements (Admin)",
+)
+def admin_list_announcements(
+    is_active: Optional[bool] = Query(None, description="Filter by active status"),
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+) -> List[Announcement]:
+    """
+    Returns all announcements, optionally filtered by active status.
+    Ordered by creation date descending.
+    """
+    query = db.query(Announcement)
+    if is_active is not None:
+        query = query.filter(Announcement.is_active == is_active)
+    return query.order_by(Announcement.created_at.desc()).all()
+
+
+@router.post(
+    "/announcements",
+    response_model=AnnouncementResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Create a new announcement (Admin)",
+)
+def admin_create_announcement(
+    payload: AnnouncementCreate,
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+) -> Announcement:
+    """
+    Create a new announcement or notification banner.
+    """
+    announcement = Announcement(
+        title=payload.title.strip(),
+        content=payload.content.strip(),
+        link_url=payload.link_url.strip() if payload.link_url else None,
+        link_text=payload.link_text.strip() if payload.link_text else None,
+        is_active=payload.is_active,
+        start_date=payload.start_date,
+        end_date=payload.end_date,
+    )
+    db.add(announcement)
+    db.commit()
+    db.refresh(announcement)
+    return announcement
+
+
+@router.get(
+    "/announcements/{announcement_id}",
+    response_model=AnnouncementResponse,
+    summary="Get announcement details by ID (Admin)",
+)
+def admin_get_announcement(
+    announcement_id: int = Path(..., ge=1),
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+) -> Announcement:
+    announcement = db.query(Announcement).filter(Announcement.id == announcement_id).first()
+    if not announcement:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Announcement with ID {announcement_id} not found",
+        )
+    return announcement
+
+
+@router.put(
+    "/announcements/{announcement_id}",
+    response_model=AnnouncementResponse,
+    summary="Update an existing announcement (Admin)",
+)
+def admin_update_announcement(
+    payload: AnnouncementUpdate,
+    announcement_id: int = Path(..., ge=1),
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+) -> Announcement:
+    announcement = db.query(Announcement).filter(Announcement.id == announcement_id).first()
+    if not announcement:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Announcement with ID {announcement_id} not found",
+        )
+
+    update_data = payload.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        if isinstance(value, str):
+            value = value.strip()
+        setattr(announcement, field, value)
+
+    db.commit()
+    db.refresh(announcement)
+    return announcement
+
+
+@router.patch(
+    "/announcements/{announcement_id}/status",
+    response_model=AnnouncementResponse,
+    summary="Toggle or update announcement active status (Admin)",
+)
+def admin_toggle_announcement_status(
+    payload: Optional[StatusUpdatePayload] = None,
+    announcement_id: int = Path(..., ge=1),
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+) -> Announcement:
+    announcement = db.query(Announcement).filter(Announcement.id == announcement_id).first()
+    if not announcement:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Announcement with ID {announcement_id} not found",
+        )
+
+    if payload and payload.is_active is not None:
+        announcement.is_active = payload.is_active
+    else:
+        announcement.is_active = not announcement.is_active
+
+    db.commit()
+    db.refresh(announcement)
+    return announcement
+
+
+@router.delete(
+    "/announcements/{announcement_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Delete an announcement (Admin)",
+)
+def admin_delete_announcement(
+    announcement_id: int = Path(..., ge=1),
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+) -> Response:
+    announcement = db.query(Announcement).filter(Announcement.id == announcement_id).first()
+    if not announcement:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Announcement with ID {announcement_id} not found",
+        )
+
+    db.delete(announcement)
+    db.commit()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+

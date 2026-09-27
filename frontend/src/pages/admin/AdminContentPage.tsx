@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import {
   FileText,
   Phone,
@@ -11,18 +11,77 @@ import {
   Package,
   Wrench,
   ExternalLink,
+  Plus,
+  Trash2,
+  Edit2,
+  Calendar,
+  X,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { Button } from "../../components/ui/Button";
 import { Card, CardContent } from "../../components/ui/Card";
 import { apiClient } from "../../services/api";
-import { HomepageContent, ContactInfo, Product, Service } from "../../types";
+import { HomepageContent, ContactInfo, Product, Service, Announcement } from "../../types";
 
-export const AdminContentPage: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<"homepage" | "contact" | "announcements">("homepage");
+interface AnnouncementFormState {
+  title: string;
+  content: string;
+  link_url: string;
+  link_text: string;
+  is_active: boolean;
+  start_date: string;
+  end_date: string;
+}
+
+const emptyAnnouncementForm: AnnouncementFormState = {
+  title: "",
+  content: "",
+  link_url: "",
+  link_text: "",
+  is_active: true,
+  start_date: "",
+  end_date: "",
+};
+
+export interface AdminContentPageProps {
+  defaultTab?: "homepage" | "contact" | "announcements";
+}
+
+export const AdminContentPage: React.FC<AdminContentPageProps> = ({ defaultTab }) => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const queryTab = searchParams.get("tab") as "homepage" | "contact" | "announcements" | null;
+  const [activeTab, setActiveTab] = useState<"homepage" | "contact" | "announcements">(
+    queryTab || defaultTab || "homepage"
+  );
+
+  // Sync tab with URL query parameter
+  const handleTabChange = (tab: "homepage" | "contact" | "announcements") => {
+    setActiveTab(tab);
+    setSearchParams({ tab });
+  };
+
+  useEffect(() => {
+    if (queryTab && ["homepage", "contact", "announcements"].includes(queryTab)) {
+      setActiveTab(queryTab);
+    } else if (defaultTab) {
+      setActiveTab(defaultTab);
+    }
+  }, [queryTab, defaultTab]);
 
   // Available products and services for selection
   const [availableProducts, setAvailableProducts] = useState<Product[]>([]);
   const [availableServices, setAvailableServices] = useState<Service[]>([]);
+
+  // Announcements State
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [isAnnouncementModalOpen, setIsAnnouncementModalOpen] = useState(false);
+  const [editingAnnouncementId, setEditingAnnouncementId] = useState<number | null>(null);
+  const [announcementForm, setAnnouncementForm] = useState<AnnouncementFormState>(emptyAnnouncementForm);
+  const [announcementModalError, setAnnouncementModalError] = useState<string | null>(null);
+  const [savingAnnouncement, setSavingAnnouncement] = useState(false);
+  const [announcementToDelete, setAnnouncementToDelete] = useState<Announcement | null>(null);
+  const [deletingAnnouncement, setDeletingAnnouncement] = useState(false);
 
   // Homepage CMS Form State
   const [homepageData, setHomepageData] = useState<HomepageContent>({
@@ -77,11 +136,12 @@ export const AdminContentPage: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      const [hpRes, ctRes, prodRes, svcRes] = await Promise.allSettled([
+      const [hpRes, ctRes, prodRes, svcRes, annRes] = await Promise.allSettled([
         apiClient.get<HomepageContent>("/admin/content/homepage"),
         apiClient.get<ContactInfo>("/admin/content/contact"),
         apiClient.get<Product[]>("/admin/products"),
         apiClient.get<Service[]>("/admin/services"),
+        apiClient.get<Announcement[]>("/admin/announcements"),
       ]);
 
       if (hpRes.status === "fulfilled") {
@@ -95,6 +155,9 @@ export const AdminContentPage: React.FC = () => {
       }
       if (svcRes.status === "fulfilled") {
         setAvailableServices(svcRes.value.data);
+      }
+      if (annRes.status === "fulfilled") {
+        setAnnouncements(annRes.value.data);
       }
     } catch (err: any) {
       setError("Failed to load CMS content from the server.");
@@ -163,6 +226,105 @@ export const AdminContentPage: React.FC = () => {
     setHomepageData({ ...homepageData, featured_service_slugs: updated });
   };
 
+  // Open Create Announcement Modal
+  const handleOpenCreateAnnouncement = () => {
+    setEditingAnnouncementId(null);
+    setAnnouncementForm(emptyAnnouncementForm);
+    setAnnouncementModalError(null);
+    setIsAnnouncementModalOpen(true);
+  };
+
+  // Open Edit Announcement Modal
+  const handleOpenEditAnnouncement = (ann: Announcement) => {
+    setEditingAnnouncementId(ann.id);
+    setAnnouncementForm({
+      title: ann.title,
+      content: ann.content,
+      link_url: ann.link_url || "",
+      link_text: ann.link_text || "",
+      is_active: ann.is_active,
+      start_date: ann.start_date ? ann.start_date.slice(0, 16) : "",
+      end_date: ann.end_date ? ann.end_date.slice(0, 16) : "",
+    });
+    setAnnouncementModalError(null);
+    setIsAnnouncementModalOpen(true);
+  };
+
+  // Save Announcement (Create or Update)
+  const handleSaveAnnouncement = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (announcementForm.title.trim().length < 2) {
+      setAnnouncementModalError("Announcement title must be at least 2 characters.");
+      return;
+    }
+    if (announcementForm.content.trim().length < 5) {
+      setAnnouncementModalError("Announcement content must be at least 5 characters.");
+      return;
+    }
+
+    setSavingAnnouncement(true);
+    setAnnouncementModalError(null);
+    try {
+      const payload = {
+        title: announcementForm.title.trim(),
+        content: announcementForm.content.trim(),
+        link_url: announcementForm.link_url.trim() || null,
+        link_text: announcementForm.link_text.trim() || null,
+        is_active: announcementForm.is_active,
+        start_date: announcementForm.start_date ? new Date(announcementForm.start_date).toISOString() : null,
+        end_date: announcementForm.end_date ? new Date(announcementForm.end_date).toISOString() : null,
+      };
+
+      if (editingAnnouncementId) {
+        const res = await apiClient.put<Announcement>(`/admin/announcements/${editingAnnouncementId}`, payload);
+        setAnnouncements((prev) => prev.map((a) => (a.id === editingAnnouncementId ? res.data : a)));
+        setFeedback({ type: "success", text: "Announcement updated successfully." });
+      } else {
+        const res = await apiClient.post<Announcement>("/admin/announcements", payload);
+        setAnnouncements((prev) => [res.data, ...prev]);
+        setFeedback({ type: "success", text: "New announcement published successfully." });
+      }
+      setTimeout(() => setFeedback(null), 4000);
+      setIsAnnouncementModalOpen(false);
+    } catch (err: any) {
+      setAnnouncementModalError(err.response?.data?.detail || "Failed to save announcement.");
+    } finally {
+      setSavingAnnouncement(false);
+    }
+  };
+
+  // Toggle Announcement Status
+  const handleToggleAnnouncementStatus = async (id: number) => {
+    try {
+      const res = await apiClient.patch<Announcement>(`/admin/announcements/${id}/status`);
+      setAnnouncements((prev) => prev.map((a) => (a.id === id ? res.data : a)));
+      setFeedback({
+        type: "success",
+        text: `Announcement status changed to ${res.data.is_active ? "Active" : "Inactive"}.`,
+      });
+      setTimeout(() => setFeedback(null), 4000);
+    } catch (err: any) {
+      setFeedback({ type: "error", text: "Failed to toggle announcement status." });
+    }
+  };
+
+  // Delete Announcement
+  const handleDeleteAnnouncement = async () => {
+    if (!announcementToDelete) return;
+    setDeletingAnnouncement(true);
+    try {
+      await apiClient.delete(`/admin/announcements/${announcementToDelete.id}`);
+      setAnnouncements((prev) => prev.filter((a) => a.id !== announcementToDelete.id));
+      setFeedback({ type: "success", text: "Announcement removed successfully." });
+      setTimeout(() => setFeedback(null), 4000);
+      setAnnouncementToDelete(null);
+    } catch (err: any) {
+      setFeedback({ type: "error", text: "Failed to delete announcement." });
+    } finally {
+      setDeletingAnnouncement(false);
+    }
+  };
+
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       {/* Header */}
@@ -226,7 +388,7 @@ export const AdminContentPage: React.FC = () => {
       <div className="flex border-b border-slate-200 space-x-2">
         <button
           type="button"
-          onClick={() => setActiveTab("homepage")}
+          onClick={() => handleTabChange("homepage")}
           className={`flex items-center gap-2 pb-3 px-3 text-sm font-semibold border-b-2 transition-colors cursor-pointer ${
             activeTab === "homepage"
               ? "border-amber-600 text-amber-800"
@@ -239,7 +401,7 @@ export const AdminContentPage: React.FC = () => {
 
         <button
           type="button"
-          onClick={() => setActiveTab("contact")}
+          onClick={() => handleTabChange("contact")}
           className={`flex items-center gap-2 pb-3 px-3 text-sm font-semibold border-b-2 transition-colors cursor-pointer ${
             activeTab === "contact"
               ? "border-amber-600 text-amber-800"
@@ -252,7 +414,7 @@ export const AdminContentPage: React.FC = () => {
 
         <button
           type="button"
-          onClick={() => setActiveTab("announcements")}
+          onClick={() => handleTabChange("announcements")}
           className={`flex items-center gap-2 pb-3 px-3 text-sm font-semibold border-b-2 transition-colors cursor-pointer ${
             activeTab === "announcements"
               ? "border-amber-600 text-amber-800"
@@ -261,6 +423,11 @@ export const AdminContentPage: React.FC = () => {
         >
           <Megaphone className="w-4 h-4" />
           <span>Announcements & Banners</span>
+          {announcements.length > 0 && (
+            <span className="ml-1 px-1.5 py-0.5 text-xs font-bold rounded-full bg-slate-200 text-slate-700">
+              {announcements.length}
+            </span>
+          )}
         </button>
       </div>
 
@@ -724,32 +891,388 @@ export const AdminContentPage: React.FC = () => {
 
       {/* TAB 3: ANNOUNCEMENTS */}
       {activeTab === "announcements" && (
-        <Card>
-          <CardContent className="p-6 sm:p-8 space-y-6">
-            <div className="border-b border-slate-100 pb-3 flex items-center justify-between">
+        <div className="space-y-6">
+          <Card>
+            <CardContent className="p-6 sm:p-8 space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+                <div>
+                  <h2 className="font-heading text-base font-bold text-slate-900 flex items-center gap-2">
+                    <Megaphone className="w-4 h-4 text-amber-600" />
+                    Website Notification Banners &amp; Advisories
+                  </h2>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Publish critical operational notices, maintenance advisories, and industry event banners across the public portal.
+                  </p>
+                </div>
+
+                <Button
+                  type="button"
+                  variant="accent"
+                  size="sm"
+                  onClick={handleOpenCreateAnnouncement}
+                  leftIcon={<Plus className="w-4 h-4" />}
+                >
+                  New Announcement
+                </Button>
+              </div>
+
+              {announcements.length === 0 ? (
+                <div className="p-12 text-center bg-slate-50 rounded-xl border border-dashed border-slate-200 space-y-3">
+                  <Megaphone className="w-10 h-10 text-slate-400 mx-auto" />
+                  <h3 className="text-sm font-bold text-slate-800">No Announcements Created</h3>
+                  <p className="text-xs text-slate-500 max-w-md mx-auto">
+                    Keep customers and corporate visitors informed with scheduled banners, factory holiday notices, or critical service advisories.
+                  </p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleOpenCreateAnnouncement}
+                    leftIcon={<Plus className="w-4 h-4" />}
+                  >
+                    Create First Announcement
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {announcements.map((ann) => (
+                    <div
+                      key={ann.id}
+                      className={`p-5 rounded-xl border transition-all ${
+                        ann.is_active
+                          ? "bg-white border-slate-200 shadow-sm hover:border-amber-200"
+                          : "bg-slate-50/70 border-slate-200 opacity-75"
+                      }`}
+                    >
+                      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                        <div className="space-y-2 flex-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span
+                              className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                                ann.is_active
+                                  ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                  : "bg-slate-100 text-slate-600 border border-slate-200"
+                              }`}
+                            >
+                              <span
+                                className={`w-1.5 h-1.5 rounded-full ${
+                                  ann.is_active ? "bg-emerald-500" : "bg-slate-400"
+                                }`}
+                              />
+                              {ann.is_active ? "Active Banner" : "Inactive / Draft"}
+                            </span>
+
+                            {(ann.start_date || ann.end_date) && (
+                              <span className="inline-flex items-center gap-1 text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
+                                <Calendar className="w-3 h-3 text-slate-400" />
+                                {ann.start_date ? new Date(ann.start_date).toLocaleDateString() : "Immediate"}
+                                {" → "}
+                                {ann.end_date ? new Date(ann.end_date).toLocaleDateString() : "Indefinite"}
+                              </span>
+                            )}
+                          </div>
+
+                          <h3 className="text-base font-bold text-slate-900 leading-snug">
+                            {ann.title}
+                          </h3>
+
+                          <p className="text-sm text-slate-600 whitespace-pre-line">
+                            {ann.content}
+                          </p>
+
+                          {ann.link_url && (
+                            <div className="pt-1">
+                              <a
+                                href={ann.link_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-600 hover:text-amber-700 hover:underline"
+                              >
+                                <ExternalLink className="w-3.5 h-3.5" />
+                                <span>{ann.link_text || ann.link_url}</span>
+                              </a>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex items-center gap-1.5 sm:self-start shrink-0 pt-1">
+                          <button
+                            type="button"
+                            onClick={() => handleToggleAnnouncementStatus(ann.id)}
+                            title={ann.is_active ? "Deactivate banner" : "Activate banner"}
+                            className={`p-2 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
+                              ann.is_active
+                                ? "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                                : "text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
+                            }`}
+                          >
+                            {ann.is_active ? (
+                              <EyeOff className="w-4 h-4" />
+                            ) : (
+                              <Eye className="w-4 h-4" />
+                            )}
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => handleOpenEditAnnouncement(ann)}
+                            title="Edit announcement"
+                            className="p-2 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors cursor-pointer"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => setAnnouncementToDelete(ann)}
+                            title="Delete announcement"
+                            className="p-2 rounded-lg text-rose-500 hover:text-rose-700 hover:bg-rose-50 transition-colors cursor-pointer"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* CREATE / EDIT ANNOUNCEMENT MODAL */}
+      {isAnnouncementModalOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto"
+        >
+          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200 animate-in fade-in zoom-in duration-150 my-8">
+            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+              <h2 className="font-heading text-lg font-bold text-slate-900">
+                {editingAnnouncementId ? "Edit Announcement" : "Create New Announcement"}
+              </h2>
+              <button
+                type="button"
+                onClick={() => setIsAnnouncementModalOpen(false)}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveAnnouncement} className="p-6 space-y-4">
+              {announcementModalError && (
+                <div className="p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                  <span>{announcementModalError}</span>
+                </div>
+              )}
+
               <div>
-                <h2 className="font-heading text-base font-bold text-slate-900 flex items-center gap-2">
-                  <Megaphone className="w-4 h-4 text-amber-600" />
-                  Website Notification Banners
-                </h2>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Publish critical banners or maintenance announcements across the website.
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  Title <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={announcementForm.title}
+                  onChange={(e) =>
+                    setAnnouncementForm({ ...announcementForm, title: e.target.value })
+                  }
+                  placeholder="e.g. Scheduled Factory Maintenance — Guindy Plant"
+                  className="w-full px-3.5 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  Message / Content <span className="text-rose-500">*</span>
+                </label>
+                <textarea
+                  rows={3}
+                  required
+                  value={announcementForm.content}
+                  onChange={(e) =>
+                    setAnnouncementForm({ ...announcementForm, content: e.target.value })
+                  }
+                  placeholder="Detailed announcement text displayed on website banners..."
+                  className="w-full px-3.5 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    Link URL (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    value={announcementForm.link_url}
+                    onChange={(e) =>
+                      setAnnouncementForm({ ...announcementForm, link_url: e.target.value })
+                    }
+                    placeholder="/contact or https://..."
+                    className="w-full px-3.5 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    Link Text (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    value={announcementForm.link_text}
+                    onChange={(e) =>
+                      setAnnouncementForm({ ...announcementForm, link_text: e.target.value })
+                    }
+                    placeholder="e.g. Read Advisory"
+                    className="w-full px-3.5 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    Start Schedule (Optional)
+                  </label>
+                  <input
+                    type="datetime-local"
+                    value={announcementForm.start_date}
+                    onChange={(e) =>
+                      setAnnouncementForm({ ...announcementForm, start_date: e.target.value })
+                    }
+                    className="w-full px-3.5 py-2 rounded-lg border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    End Schedule (Optional)
+                  </label>
+                  <input
+                    type="datetime-local"
+                    value={announcementForm.end_date}
+                    onChange={(e) =>
+                      setAnnouncementForm({ ...announcementForm, end_date: e.target.value })
+                    }
+                    className="w-full px-3.5 py-2 rounded-lg border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
+                  />
+                </div>
+              </div>
+
+              <div className="pt-2 flex items-center">
+                <label className="flex items-center gap-2 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={announcementForm.is_active}
+                    onChange={(e) =>
+                      setAnnouncementForm({ ...announcementForm, is_active: e.target.checked })
+                    }
+                    className="w-4 h-4 rounded text-amber-600 focus:ring-amber-500 border-slate-300"
+                  />
+                  <span className="text-sm font-semibold text-slate-800">
+                    Active (Publish banner to website immediately)
+                  </span>
+                </label>
+              </div>
+
+              <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="md"
+                  onClick={() => setIsAnnouncementModalOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  variant="accent"
+                  size="md"
+                  disabled={savingAnnouncement}
+                  leftIcon={
+                    savingAnnouncement ? (
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Save className="w-4 h-4" />
+                    )
+                  }
+                >
+                  {savingAnnouncement
+                    ? "Saving..."
+                    : editingAnnouncementId
+                    ? "Save Changes"
+                    : "Publish Announcement"}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* DELETE CONFIRMATION MODAL */}
+      {announcementToDelete && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4"
+        >
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-200 p-6 space-y-4 animate-in fade-in zoom-in duration-150">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-full bg-rose-100 flex items-center justify-center text-rose-600 shrink-0">
+                <AlertCircle className="w-5 h-5" />
+              </div>
+              <div className="space-y-1">
+                <h3 className="font-heading text-lg font-bold text-slate-900">
+                  Delete Announcement?
+                </h3>
+                <p className="text-sm text-slate-600">
+                  Are you sure you want to permanently delete{" "}
+                  <span className="font-semibold text-slate-900">
+                    "{announcementToDelete.title}"
+                  </span>
+                  ? This action cannot be undone.
                 </p>
               </div>
             </div>
 
-            <div className="p-8 text-center bg-slate-50 rounded-xl border border-dashed border-slate-200 space-y-2">
-              <Megaphone className="w-8 h-8 text-slate-400 mx-auto" />
-              <h3 className="text-sm font-bold text-slate-800">Announcement System</h3>
-              <p className="text-xs text-slate-500 max-w-md mx-auto">
-                No active announcements are scheduled. You can publish notice alerts for factory visits, exhibitions, or holiday schedules.
-              </p>
+            <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                size="md"
+                onClick={() => setAnnouncementToDelete(null)}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                variant="danger"
+                size="md"
+                disabled={deletingAnnouncement}
+                onClick={handleDeleteAnnouncement}
+                leftIcon={
+                  deletingAnnouncement ? (
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Trash2 className="w-4 h-4" />
+                  )
+                }
+              >
+                {deletingAnnouncement ? "Deleting..." : "Delete Announcement"}
+              </Button>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       )}
     </div>
   );
 };
 
 export default AdminContentPage;
+

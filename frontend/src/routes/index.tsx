@@ -69,6 +69,8 @@ export const router = createBrowserRouter([
       { path: "enquiries/:id", element: <AdminEnquiryDetailPage /> },
       { path: "services", element: <AdminServicesPage /> },
       { path: "content", element: <AdminContentPage /> },
+      { path: "contact-info", element: <AdminContentPage defaultTab="contact" /> },
+      { path: "announcements", element: <AdminContentPage defaultTab="announcements" /> },
       { path: "settings", element: <AdminSettingsPage /> },
       { path: "*", element: <NotFoundPage /> },
     ],

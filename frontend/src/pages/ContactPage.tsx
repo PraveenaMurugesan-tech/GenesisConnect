@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
   Phone,
@@ -20,6 +20,8 @@ import { Textarea } from "../components/ui/Textarea";
 import { Button } from "../components/ui/Button";
 import { Card, CardContent } from "../components/ui/Card";
 import { COMPANY_INFO } from "../data/company";
+import { apiClient } from "../services/api";
+import { ContactInfo } from "../types";
 
 interface ContactFormState {
   name: string;
@@ -52,6 +54,22 @@ export const ContactPage: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [messageReference, setMessageReference] = useState("");
+  const [liveContact, setLiveContact] = useState<ContactInfo | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    apiClient
+      .get<ContactInfo>("/content/contact")
+      .then((res) => {
+        if (isMounted) setLiveContact(res.data);
+      })
+      .catch(() => {
+        // Fallback silently to COMPANY_INFO
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -162,7 +180,7 @@ export const ContactPage: React.FC = () => {
                     Corporate Headquarters
                   </span>
                   <h3 className="font-heading text-lg font-bold text-slate-900">
-                    {COMPANY_INFO.legalName}
+                    {liveContact?.company_name || COMPANY_INFO.legalName}
                   </h3>
                 </div>
 
@@ -171,9 +189,11 @@ export const ContactPage: React.FC = () => {
                     <MapPin className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
                     <div>
                       <div className="font-semibold text-slate-900">Office &amp; Engineering Works</div>
-                      <div>{COMPANY_INFO.contact.address.line1}</div>
+                      <div>{liveContact?.address_line1 || COMPANY_INFO.contact.address.line1}</div>
                       <div>
-                        {COMPANY_INFO.contact.address.city}, {COMPANY_INFO.contact.address.state} {COMPANY_INFO.contact.address.postalCode}, {COMPANY_INFO.contact.address.country}
+                        {liveContact
+                          ? `${liveContact.city}, ${liveContact.state} ${liveContact.postal_code}, ${liveContact.country}`
+                          : `${COMPANY_INFO.contact.address.city}, ${COMPANY_INFO.contact.address.state} ${COMPANY_INFO.contact.address.postalCode}, ${COMPANY_INFO.contact.address.country}`}
                       </div>
                     </div>
                   </div>
@@ -183,10 +203,10 @@ export const ContactPage: React.FC = () => {
                     <div>
                       <div className="font-semibold text-slate-900">General Board Line</div>
                       <a
-                        href={`tel:${COMPANY_INFO.contact.phones.boardRaw}`}
+                        href={`tel:${liveContact?.phone_board || COMPANY_INFO.contact.phones.boardRaw}`}
                         className="text-sky-700 hover:underline font-mono text-xs sm:text-sm"
                       >
-                        {COMPANY_INFO.contact.phones.board}
+                        {liveContact?.phone_board || COMPANY_INFO.contact.phones.board}
                       </a>
                     </div>
                   </div>
@@ -196,10 +216,10 @@ export const ContactPage: React.FC = () => {
                     <div>
                       <div className="font-semibold text-slate-900">24/7 Breakdown &amp; AMC Technical Hotline</div>
                       <a
-                        href={`tel:${COMPANY_INFO.contact.phones.hotlineRaw}`}
+                        href={`tel:${liveContact?.phone_hotline || COMPANY_INFO.contact.phones.hotlineRaw}`}
                         className="text-emerald-700 hover:underline font-mono text-xs sm:text-sm font-semibold"
                       >
-                        {COMPANY_INFO.contact.phones.hotline}
+                        {liveContact?.phone_hotline || COMPANY_INFO.contact.phones.hotline}
                       </a>
                     </div>
                   </div>
@@ -210,16 +230,16 @@ export const ContactPage: React.FC = () => {
                       <div className="font-semibold text-slate-900">Official Electronic Mail</div>
                       <div>
                         <a
-                          href={`mailto:${COMPANY_INFO.contact.emails.general}`}
+                          href={`mailto:${liveContact?.email_general || COMPANY_INFO.contact.emails.general}`}
                           className="text-sky-700 hover:underline block"
                         >
-                          {COMPANY_INFO.contact.emails.general}
+                          {liveContact?.email_general || COMPANY_INFO.contact.emails.general}
                         </a>
                         <a
-                          href={`mailto:${COMPANY_INFO.contact.emails.sales}`}
+                          href={`mailto:${liveContact?.email_sales || COMPANY_INFO.contact.emails.sales}`}
                           className="text-slate-500 hover:underline text-xs block mt-0.5"
                         >
-                          Commercial: {COMPANY_INFO.contact.emails.sales}
+                          Commercial: {liveContact?.email_sales || COMPANY_INFO.contact.emails.sales}
                         </a>
                       </div>
                     </div>
@@ -229,9 +249,9 @@ export const ContactPage: React.FC = () => {
                     <Clock className="w-5 h-5 text-slate-400 flex-shrink-0 mt-0.5" />
                     <div>
                       <div className="font-semibold text-slate-900">Operating Hours</div>
-                      <div>{COMPANY_INFO.contact.workingHours.office}</div>
+                      <div>{liveContact?.office_hours || COMPANY_INFO.contact.workingHours.office}</div>
                       <div className="text-xs text-slate-500 mt-0.5">
-                        {COMPANY_INFO.contact.workingHours.technicalSupport}
+                        {liveContact?.support_hours || COMPANY_INFO.contact.workingHours.technicalSupport}
                       </div>
                     </div>
                   </div>

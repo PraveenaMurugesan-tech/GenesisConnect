@@ -21,6 +21,7 @@ import { Button } from "../components/ui/Button";
 import { Card, CardContent } from "../components/ui/Card";
 import { COMPANY_INFO } from "../data/company";
 import { apiClient } from "../services/api";
+import { submitContactMessage } from "../services/enquiryService";
 import { ContactInfo } from "../types";
 
 interface ContactFormState {
@@ -54,6 +55,7 @@ export const ContactPage: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [messageReference, setMessageReference] = useState("");
+  const [serverError, setServerError] = useState<string | null>(null);
   const [liveContact, setLiveContact] = useState<ContactInfo | null>(null);
 
   useEffect(() => {
@@ -79,6 +81,9 @@ export const ContactPage: React.FC = () => {
 
     if (errors[name as keyof ContactFormErrors]) {
       setErrors((prev) => ({ ...prev, [name]: undefined }));
+    }
+    if (serverError) {
+      setServerError(null);
     }
   };
 
@@ -113,20 +118,35 @@ export const ContactPage: React.FC = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!validate()) return;
 
     setIsSubmitting(true);
+    setServerError(null);
 
-    // Simulate transient frontend submission latency (no live backend in Phase 2)
-    setTimeout(() => {
-      const randomRef = `GEN-MSG-${Math.floor(10000 + Math.random() * 90000)}`;
-      setMessageReference(randomRef);
-      setIsSubmitting(false);
+    try {
+      const res = await submitContactMessage({
+        name: formData.name.trim(),
+        company_name: formData.companyName.trim() || undefined,
+        email: formData.email.trim(),
+        phone: formData.phone.trim() || undefined,
+        subject: formData.subject.trim() || undefined,
+        message: formData.message.trim(),
+      });
+
+      const refId = `GEN-MSG-${String(res.id).padStart(5, "0")}`;
+      setMessageReference(refId);
       setSubmitted(true);
-    }, 600);
+    } catch (err: any) {
+      const msg =
+        err.response?.data?.detail ||
+        "Unable to send your message at this time. Please check your network connection and try again.";
+      setServerError(typeof msg === "string" ? msg : JSON.stringify(msg));
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleReset = () => {
@@ -141,6 +161,7 @@ export const ContactPage: React.FC = () => {
     setErrors({});
     setSubmitted(false);
     setMessageReference("");
+    setServerError(null);
   };
 
   return (
@@ -161,14 +182,31 @@ export const ContactPage: React.FC = () => {
           className="mb-8"
         />
 
-        {/* Phase 2 Architecture Notice */}
+        {/* Direct Response Guarantee Notice */}
         <div className="p-4 rounded-xl bg-sky-50 border border-sky-200 flex items-start gap-3 text-xs text-sky-900 mb-8">
           <ShieldCheck className="w-5 h-5 text-sky-700 flex-shrink-0 mt-0.5" />
           <div>
-            <span className="font-bold">Phase 2 Contact Interface:</span>
-            {" "}Verified corporate contact information and interactive message validation. Message storage in PostgreSQL and email notification webhooks will be connected in Phase 3.
+            <span className="font-bold">Direct Response Guarantee:</span>
+            {" "}All inquiries submitted here are routed directly to our application engineering and corporate support desks in Chennai with rapid turnaround.
           </div>
         </div>
+
+        {serverError && (
+          <div
+            role="alert"
+            className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center justify-between mb-6 shadow-xs"
+          >
+            <span>{serverError}</span>
+            <button
+              type="button"
+              onClick={() => setServerError(null)}
+              className="text-rose-600 hover:text-rose-800 font-bold ml-4"
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
+
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
           {/* Left Column: Corporate Directory Cards */}

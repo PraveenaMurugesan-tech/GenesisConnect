@@ -16,8 +16,8 @@ class QuoteStatus(str, enum.Enum):
 
 class RequirementStatus(str, enum.Enum):
     NEW = "NEW"
-    UNDER_REVIEW = "UNDER_REVIEW"
-    ESTIMATED = "ESTIMATED"
+    CONTACTED = "CONTACTED"
+    IN_PROGRESS = "IN_PROGRESS"
     QUOTED = "QUOTED"
     CLOSED = "CLOSED"
 
@@ -26,6 +26,7 @@ class ContactStatus(str, enum.Enum):
     UNREAD = "UNREAD"
     READ = "READ"
     REPLIED = "REPLIED"
+    CLOSED = "CLOSED"
     ARCHIVED = "ARCHIVED"
 
 
@@ -42,6 +43,9 @@ class QuoteRequest(Base):
         nullable=True,
         index=True,
     )
+    product_name: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    quantity: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    requirement: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     message: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     status: Mapped[QuoteStatus] = mapped_column(
         Enum(QuoteStatus, name="quote_status_enum"),
@@ -125,6 +129,13 @@ class ContactMessage(Base):
         default=lambda: datetime.now(timezone.utc),
         nullable=False,
     )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+        nullable=False,
+    )
 
     def __repr__(self) -> str:
         return f"<ContactMessage id={self.id} name='{self.name}' status='{self.status}'>"
+

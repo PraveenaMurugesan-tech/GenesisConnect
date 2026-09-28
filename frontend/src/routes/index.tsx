@@ -67,7 +67,10 @@ export const router = createBrowserRouter([
       { path: "products/:id/edit", element: <AdminProductFormPage /> },
       { path: "enquiries", element: <AdminEnquiriesPage /> },
       { path: "enquiries/:id", element: <AdminEnquiryDetailPage /> },
+      { path: "enquiries/:type/:id", element: <AdminEnquiryDetailPage /> },
       { path: "services", element: <AdminServicesPage /> },
+
+
       { path: "content", element: <AdminContentPage /> },
       { path: "contact-info", element: <AdminContentPage defaultTab="contact" /> },
       { path: "announcements", element: <AdminContentPage defaultTab="announcements" /> },

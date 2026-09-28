@@ -6,20 +6,37 @@
 from typing import Any, List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, Path, status, Response
 from pydantic import BaseModel
+from sqlalchemy import or_
 from sqlalchemy.orm import Session
 from app.api.deps import get_db, get_current_admin
 from app.models.user import User
 from app.models.service import Service
 from app.models.announcement import Announcement
+from app.models.enquiry import (
+    QuoteRequest,
+    QuoteStatus,
+    CustomRequirement,
+    RequirementStatus,
+    ContactMessage,
+    ContactStatus,
+)
 from app.repositories.product_repository import ProductRepository
 from app.services.product_service import ProductService
 from app.services.content_service import ContentService
-from app.schemas.admin import AdminDashboardResponse
+from app.schemas.admin import AdminDashboardResponse, EnquiryMetricsSchema
 from app.schemas.auth import UserResponse
 from app.schemas.product import ProductResponse, ProductCreate, ProductUpdate
 from app.schemas.service import ServiceResponse, ServiceCreate, ServiceUpdate
 from app.schemas.site_content import HomepageContentSchema, ContactInfoSchema
 from app.schemas.announcement import AnnouncementResponse, AnnouncementCreate, AnnouncementUpdate
+from app.schemas.enquiry import (
+    QuoteRequestResponse,
+    QuoteRequestUpdateStatus,
+    CustomRequirementResponse,
+    CustomRequirementUpdateStatus,
+    ContactMessageResponse,
+    ContactMessageUpdateStatus,
+)
 
 router = APIRouter(prefix="/admin", tags=["Admin Control System"])
 
@@ -39,6 +56,7 @@ def get_admin_dashboard(
 ) -> Any:
     """
     Returns high-level administrative dashboard overview metrics.
+    Queries real catalogue counts and live customer enquiry counts.
     Requires active administrator authentication via Bearer token.
     """
     product_repo = ProductRepository(db)
@@ -47,16 +65,38 @@ def get_admin_dashboard(
     inactive_products = product_repo.count(active_only=False)
     total_services = db.query(Service).count()
 
+    # Real enquiry metrics from database
+    new_quotes = db.query(QuoteRequest).filter(QuoteRequest.status == QuoteStatus.NEW).count()
+    open_requirements = db.query(CustomRequirement).filter(
+        CustomRequirement.status.in_([RequirementStatus.NEW, RequirementStatus.CONTACTED, RequirementStatus.IN_PROGRESS])
+    ).count()
+    new_contact = db.query(ContactMessage).filter(ContactMessage.status == ContactStatus.UNREAD).count()
+    total_enquiries_count = (
+        db.query(QuoteRequest).count()
+        + db.query(CustomRequirement).count()
+        + db.query(ContactMessage).count()
+    )
+
+    enquiry_counts = EnquiryMetricsSchema(
+        new_quote_requests=new_quotes,
+        open_custom_requirements=open_requirements,
+        new_contact_messages=new_contact,
+        total_enquiries=total_enquiries_count,
+    )
+
     return AdminDashboardResponse(
         admin=UserResponse.model_validate(current_admin),
         total_products=total_products,
         active_products=active_products,
         inactive_products=inactive_products,
         total_services=total_services,
-        total_enquiries="Not available (Phase 7)",
+        total_enquiries=f"{total_enquiries_count} (Phase 7 Active)",
+        enquiry_counts=enquiry_counts,
         system_status="Operational",
         api_version="1.0.0",
     )
+
+
 
 
 # ==============================================================================
@@ -566,4 +606,232 @@ def admin_delete_announcement(
     db.delete(announcement)
     db.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+# ==============================================================================
+# Protected Admin Enquiry & Communication Management Endpoints
+# ==============================================================================
+
+# --- 1. Quote Requests ---
+
+@router.get(
+    "/quote-requests",
+    response_model=List[QuoteRequestResponse],
+    summary="List all customer quote requests (Admin)",
+)
+def admin_list_quote_requests(
+    status_filter: Optional[QuoteStatus] = Query(None, alias="status", description="Filter by status"),
+    search: Optional[str] = Query(None, description="Search by customer name, email, or company"),
+    product_id: Optional[int] = Query(None, description="Filter by product ID"),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=100),
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+) -> List[QuoteRequest]:
+    query = db.query(QuoteRequest)
+    if status_filter:
+        query = query.filter(QuoteRequest.status == status_filter)
+    if product_id:
+        query = query.filter(QuoteRequest.product_id == product_id)
+    if search and search.strip():
+        term = f"%{search.strip()}%"
+        query = query.filter(
+            or_(
+                QuoteRequest.customer_name.ilike(term),
+                QuoteRequest.email.ilike(term),
+                QuoteRequest.company_name.ilike(term),
+                QuoteRequest.product_name.ilike(term),
+            )
+        )
+    return query.order_by(QuoteRequest.created_at.desc()).offset(skip).limit(limit).all()
+
+
+@router.get(
+    "/quote-requests/{quote_id}",
+    response_model=QuoteRequestResponse,
+    summary="Retrieve single quote request detail (Admin)",
+)
+def admin_get_quote_request(
+    quote_id: int = Path(..., ge=1),
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+) -> QuoteRequest:
+    quote = db.query(QuoteRequest).filter(QuoteRequest.id == quote_id).first()
+    if not quote:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Quote request with ID {quote_id} not found",
+        )
+    return quote
+
+
+@router.patch(
+    "/quote-requests/{quote_id}/status",
+    response_model=QuoteRequestResponse,
+    summary="Update quote request workflow status (Admin)",
+)
+def admin_update_quote_request_status(
+    quote_id: int = Path(..., ge=1),
+    status_update: QuoteRequestUpdateStatus = ...,
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+) -> QuoteRequest:
+    quote = db.query(QuoteRequest).filter(QuoteRequest.id == quote_id).first()
+    if not quote:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Quote request with ID {quote_id} not found",
+        )
+    quote.status = status_update.status
+    db.commit()
+    db.refresh(quote)
+    return quote
+
+
+# --- 2. Custom Requirements ---
+
+@router.get(
+    "/custom-requirements",
+    response_model=List[CustomRequirementResponse],
+    summary="List all technical custom requirements (Admin)",
+)
+def admin_list_custom_requirements(
+    status_filter: Optional[RequirementStatus] = Query(None, alias="status", description="Filter by status"),
+    search: Optional[str] = Query(None, description="Search by customer name, email, company, or product"),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=100),
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+) -> List[CustomRequirement]:
+    query = db.query(CustomRequirement)
+    if status_filter:
+        query = query.filter(CustomRequirement.status == status_filter)
+    if search and search.strip():
+        term = f"%{search.strip()}%"
+        query = query.filter(
+            or_(
+                CustomRequirement.customer_name.ilike(term),
+                CustomRequirement.email.ilike(term),
+                CustomRequirement.company_name.ilike(term),
+                CustomRequirement.product.ilike(term),
+                CustomRequirement.capacity.ilike(term),
+            )
+        )
+    return query.order_by(CustomRequirement.created_at.desc()).offset(skip).limit(limit).all()
+
+
+@router.get(
+    "/custom-requirements/{requirement_id}",
+    response_model=CustomRequirementResponse,
+    summary="Retrieve single custom requirement detail (Admin)",
+)
+def admin_get_custom_requirement(
+    requirement_id: int = Path(..., ge=1),
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+) -> CustomRequirement:
+    req = db.query(CustomRequirement).filter(CustomRequirement.id == requirement_id).first()
+    if not req:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Custom requirement with ID {requirement_id} not found",
+        )
+    return req
+
+
+@router.patch(
+    "/custom-requirements/{requirement_id}/status",
+    response_model=CustomRequirementResponse,
+    summary="Update custom requirement status (Admin)",
+)
+def admin_update_custom_requirement_status(
+    requirement_id: int = Path(..., ge=1),
+    status_update: CustomRequirementUpdateStatus = ...,
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+) -> CustomRequirement:
+    req = db.query(CustomRequirement).filter(CustomRequirement.id == requirement_id).first()
+    if not req:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Custom requirement with ID {requirement_id} not found",
+        )
+    req.status = status_update.status
+    db.commit()
+    db.refresh(req)
+    return req
+
+
+# --- 3. Contact Messages ---
+
+@router.get(
+    "/contact-messages",
+    response_model=List[ContactMessageResponse],
+    summary="List all contact messages (Admin)",
+)
+def admin_list_contact_messages(
+    status_filter: Optional[ContactStatus] = Query(None, alias="status", description="Filter by status"),
+    search: Optional[str] = Query(None, description="Search by name, email, company, or subject"),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=100),
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+) -> List[ContactMessage]:
+    query = db.query(ContactMessage)
+    if status_filter:
+        query = query.filter(ContactMessage.status == status_filter)
+    if search and search.strip():
+        term = f"%{search.strip()}%"
+        query = query.filter(
+            or_(
+                ContactMessage.name.ilike(term),
+                ContactMessage.email.ilike(term),
+                ContactMessage.company_name.ilike(term),
+                ContactMessage.subject.ilike(term),
+            )
+        )
+    return query.order_by(ContactMessage.created_at.desc()).offset(skip).limit(limit).all()
+
+
+@router.get(
+    "/contact-messages/{message_id}",
+    response_model=ContactMessageResponse,
+    summary="Retrieve single contact message detail (Admin)",
+)
+def admin_get_contact_message(
+    message_id: int = Path(..., ge=1),
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+) -> ContactMessage:
+    contact = db.query(ContactMessage).filter(ContactMessage.id == message_id).first()
+    if not contact:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Contact message with ID {message_id} not found",
+        )
+    return contact
+
+
+@router.patch(
+    "/contact-messages/{message_id}/status",
+    response_model=ContactMessageResponse,
+    summary="Update contact message status (Admin)",
+)
+def admin_update_contact_message_status(
+    message_id: int = Path(..., ge=1),
+    status_update: ContactMessageUpdateStatus = ...,
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+) -> ContactMessage:
+    contact = db.query(ContactMessage).filter(ContactMessage.id == message_id).first()
+    if not contact:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Contact message with ID {message_id} not found",
+        )
+    contact.status = status_update.status
+    db.commit()
+    db.refresh(contact)
+    return contact
+
 

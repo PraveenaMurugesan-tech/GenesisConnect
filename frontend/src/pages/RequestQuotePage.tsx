@@ -19,6 +19,7 @@ import { Textarea } from "../components/ui/Textarea";
 import { Button } from "../components/ui/Button";
 import { Card, CardContent } from "../components/ui/Card";
 import { getProducts, getProductBySlug } from "../services/productService";
+import { submitQuoteRequest } from "../services/enquiryService";
 import { Product } from "../types";
 
 interface FormState {
@@ -74,6 +75,7 @@ export const RequestQuotePage: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [quoteReference, setQuoteReference] = useState("");
+  const [serverError, setServerError] = useState<string | null>(null);
 
   // Auto-select product if passed in URL query param
   useEffect(() => {
@@ -94,6 +96,9 @@ export const RequestQuotePage: React.FC = () => {
     // Clear error for field if user types
     if (errors[name as keyof FormErrors]) {
       setErrors((prev) => ({ ...prev, [name]: undefined }));
+    }
+    if (serverError) {
+      setServerError(null);
     }
   };
 
@@ -132,20 +137,39 @@ export const RequestQuotePage: React.FC = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!validate()) return;
 
     setIsSubmitting(true);
+    setServerError(null);
 
-    // Simulate transient frontend submission latency (no live backend in Phase 2)
-    setTimeout(() => {
-      const randomRef = `GEN-QT-${Math.floor(10000 + Math.random() * 90000)}`;
-      setQuoteReference(randomRef);
-      setIsSubmitting(false);
+    try {
+      const selected = allProducts.find((p) => p.slug === formData.productSlug);
+      const res = await submitQuoteRequest({
+        customer_name: formData.customerName.trim(),
+        company_name: formData.companyName.trim() || undefined,
+        email: formData.email.trim(),
+        phone: formData.phone.trim(),
+        product_id: selected?.id ? Number(selected.id) : undefined,
+        product_name: selected?.name || formData.productSlug,
+        quantity: formData.capacity.trim() || undefined,
+        requirement: formData.message.trim(),
+        message: formData.message.trim(),
+      });
+
+      const refId = `GEN-QT-${String(res.id).padStart(5, "0")}`;
+      setQuoteReference(refId);
       setSubmitted(true);
-    }, 600);
+    } catch (err: any) {
+      const msg =
+        err.response?.data?.detail ||
+        "We were unable to process your quotation request. Please check your network connection and try again.";
+      setServerError(typeof msg === "string" ? msg : JSON.stringify(msg));
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleReset = () => {
@@ -161,6 +185,7 @@ export const RequestQuotePage: React.FC = () => {
     setErrors({});
     setSubmitted(false);
     setQuoteReference("");
+    setServerError(null);
   };
 
   return (
@@ -181,14 +206,31 @@ export const RequestQuotePage: React.FC = () => {
           className="mb-8"
         />
 
-        {/* Phase 2 Architecture Notice */}
+        {/* Commercial Engineering Guarantee Notice */}
         <div className="p-4 rounded-xl bg-sky-50 border border-sky-200 flex items-start gap-3 text-xs text-sky-900 mb-8">
           <ShieldCheck className="w-5 h-5 text-sky-700 flex-shrink-0 mt-0.5" />
           <div>
-            <span className="font-bold">Phase 2 Frontend Validation Mode:</span>
-            {" "}This quotation form validates client fields, handles dynamic preselection from the product catalogue, and simulates submission flow. Live FastAPI database dispatch and PDF generation will connect in Phase 3.
+            <span className="font-bold">Official Technical Review:</span>
+            {" "}Quotations submitted via GenesisConnect are reviewed directly by senior application engineers with certified sizing for industrial UPS, stabilizers, and medical equipment.
           </div>
         </div>
+
+        {serverError && (
+          <div
+            role="alert"
+            className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center justify-between mb-6 shadow-xs"
+          >
+            <span>{serverError}</span>
+            <button
+              type="button"
+              onClick={() => setServerError(null)}
+              className="text-rose-600 hover:text-rose-800 font-bold ml-4"
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
+
 
         {submitted ? (
           /* Submission Confirmation View */

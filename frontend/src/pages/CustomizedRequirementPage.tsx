@@ -21,6 +21,7 @@ import { Select } from "../components/ui/Select";
 import { Textarea } from "../components/ui/Textarea";
 import { Button } from "../components/ui/Button";
 import { Card, CardContent } from "../components/ui/Card";
+import { submitCustomRequirement } from "../services/enquiryService";
 
 interface CustomFormState {
   customerName: string;
@@ -75,6 +76,7 @@ export const CustomizedRequirementPage: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [requirementReference, setRequirementReference] = useState("");
+  const [serverError, setServerError] = useState<string | null>(null);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
@@ -84,6 +86,9 @@ export const CustomizedRequirementPage: React.FC = () => {
 
     if (errors[name as keyof CustomFormErrors]) {
       setErrors((prev) => ({ ...prev, [name]: undefined }));
+    }
+    if (serverError) {
+      setServerError(null);
     }
   };
 
@@ -140,20 +145,40 @@ export const CustomizedRequirementPage: React.FC = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!validate()) return;
 
     setIsSubmitting(true);
+    setServerError(null);
 
-    // Simulate transient frontend submission latency (no live backend in Phase 2)
-    setTimeout(() => {
-      const randomRef = `GEN-REQ-${Math.floor(10000 + Math.random() * 90000)}`;
-      setRequirementReference(randomRef);
-      setIsSubmitting(false);
+    try {
+      const res = await submitCustomRequirement({
+        customer_name: formData.customerName.trim(),
+        company_name: formData.companyName.trim() || undefined,
+        email: formData.email.trim(),
+        phone: formData.phone.trim(),
+        product: formData.productType,
+        capacity: formData.capacity.trim(),
+        battery_specifications: formData.batterySpecs.trim() || undefined,
+        backup_requirements: formData.backupRequirements.trim() || undefined,
+        equipment_information: formData.equipmentInfo.trim(),
+        additional_requirements: formData.additionalRequirements.trim() || undefined,
+        document_url: selectedFile ? `attachment:${selectedFile.name}` : undefined,
+      });
+
+      const refId = `GEN-REQ-${String(res.id).padStart(5, "0")}`;
+      setRequirementReference(refId);
       setSubmitted(true);
-    }, 600);
+    } catch (err: any) {
+      const msg =
+        err.response?.data?.detail ||
+        "We were unable to submit your customized requirement. Please check your network connection and try again.";
+      setServerError(typeof msg === "string" ? msg : JSON.stringify(msg));
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleReset = () => {
@@ -173,6 +198,7 @@ export const CustomizedRequirementPage: React.FC = () => {
     setSelectedFile(null);
     setSubmitted(false);
     setRequirementReference("");
+    setServerError(null);
   };
 
   return (
@@ -193,14 +219,31 @@ export const CustomizedRequirementPage: React.FC = () => {
           className="mb-8"
         />
 
-        {/* Phase 2 Architecture Notice */}
+        {/* Engineering Notice */}
         <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 flex items-start gap-3 text-xs text-amber-900 mb-8">
           <ShieldCheck className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
           <div>
-            <span className="font-bold">Phase 2 Engineering Form Foundation:</span>
-            {" "}This intake form layout validates client-side parameters and simulates file selection. Document uploads to Supabase storage and automated engineering review tickets will be wired in Phase 3.
+            <span className="font-bold">Engineering Evaluation Scope:</span>
+            {" "}Customized power requirements are reviewed directly by our R&amp;D and electrical application team. We specialize in custom transformers, harsh-environment enclosures, and precise harmonic control.
           </div>
         </div>
+
+        {serverError && (
+          <div
+            role="alert"
+            className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center justify-between mb-6 shadow-xs"
+          >
+            <span>{serverError}</span>
+            <button
+              type="button"
+              onClick={() => setServerError(null)}
+              className="text-rose-600 hover:text-rose-800 font-bold ml-4"
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
+
 
         {submitted ? (
           /* Submission Confirmation View */

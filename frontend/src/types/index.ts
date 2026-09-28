@@ -27,11 +27,19 @@ export interface LoginCredentials {
   password: string;
 }
 
+export interface EnquiryMetrics {
+  new_quote_requests: number;
+  open_custom_requirements: number;
+  new_contact_messages: number;
+  total_enquiries: number;
+}
+
 export interface AdminDashboardStats {
   admin: User;
   total_products: number;
   active_products: number;
   total_enquiries: string;
+  enquiry_counts?: EnquiryMetrics;
   system_status: string;
   api_version: string;
   inactive_products?: number;
@@ -121,7 +129,10 @@ export interface QuoteRequest {
   company_name?: string;
   email: string;
   phone: string;
-  product_id?: number | string;
+  product_id?: number | null;
+  product_name?: string;
+  quantity?: string;
+  requirement?: string;
   message?: string;
   status: QuoteStatus;
   created_at: string;
@@ -129,7 +140,7 @@ export interface QuoteRequest {
   product?: Product;
 }
 
-export type RequirementStatus = "NEW" | "UNDER_REVIEW" | "ESTIMATED" | "QUOTED" | "CLOSED";
+export type RequirementStatus = "NEW" | "CONTACTED" | "IN_PROGRESS" | "QUOTED" | "CLOSED" | "UNDER_REVIEW" | "ESTIMATED";
 
 export interface CustomRequirement {
   id: number;
@@ -149,7 +160,7 @@ export interface CustomRequirement {
   updated_at: string;
 }
 
-export type ContactStatus = "UNREAD" | "READ" | "REPLIED" | "ARCHIVED";
+export type ContactStatus = "UNREAD" | "READ" | "REPLIED" | "CLOSED" | "ARCHIVED";
 
 export interface ContactMessage {
   id: number;
@@ -161,4 +172,6 @@ export interface ContactMessage {
   message: string;
   status: ContactStatus;
   created_at: string;
+  updated_at?: string;
 }
+

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import {
   Package,
   Inbox,
@@ -6,7 +7,6 @@ import {
   Zap,
   Activity,
   CheckCircle2,
-  Clock,
   RefreshCw,
   AlertCircle,
   FileEdit,
@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { apiClient } from "../../services/api";
 import { AdminDashboardStats } from "../../types";
+
 
 export const AdminDashboardPage: React.FC = () => {
   const [stats, setStats] = useState<AdminDashboardStats | null>(null);
@@ -168,26 +169,41 @@ export const AdminDashboardPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Card 4: Enquiries (Phase 7) */}
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs hover:border-slate-300 transition-colors">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
-              Customer Enquiries
-            </span>
-            <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-700 flex items-center justify-center">
-              <Inbox className="w-5 h-5" />
+        {/* Card 4: Enquiries */}
+        <Link to="/admin/enquiries" className="block">
+          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs hover:border-purple-300 transition-colors">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                Customer Enquiries
+              </span>
+              <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-700 flex items-center justify-center">
+                <Inbox className="w-5 h-5" />
+              </div>
+            </div>
+            <div className="mt-4">
+              {loading ? (
+                <div className="h-8 w-16 bg-slate-100 animate-pulse rounded-md" />
+              ) : (
+                <div className="font-heading text-3xl font-extrabold text-purple-700">
+                  {stats?.enquiry_counts?.total_enquiries ?? 0}
+                </div>
+              )}
+              <div className="text-xs text-slate-500 mt-1 flex flex-wrap items-center gap-1.5">
+                {stats?.enquiry_counts ? (
+                  <>
+                    <span className="font-semibold text-purple-700">
+                      {stats.enquiry_counts.new_quote_requests} new quotes
+                    </span>
+                    <span>•</span>
+                    <span>{stats.enquiry_counts.new_contact_messages} unread</span>
+                  </>
+                ) : (
+                  <span>Active customer enquiry inbox</span>
+                )}
+              </div>
             </div>
           </div>
-          <div className="mt-4">
-            <div className="font-heading text-lg font-bold text-slate-600">
-              Phase 7 Inbox
-            </div>
-            <p className="text-xs text-purple-700 font-semibold mt-1 flex items-center gap-1">
-              <Clock className="w-3.5 h-3.5" />
-              <span>Customer quote lifecycle</span>
-            </p>
-          </div>
-        </div>
+        </Link>
       </div>
 
       {/* Architecture & Milestone Blueprint */}
@@ -222,18 +238,15 @@ export const AdminDashboardPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Phase 6 Active Card */}
-        <div className="bg-white p-6 rounded-2xl border border-amber-300/80 shadow-xs relative overflow-hidden">
-          <div className="absolute top-0 right-0 px-3 py-1 bg-amber-500 text-slate-950 font-bold text-[10px] uppercase tracking-wider rounded-bl-lg">
-            Active Phase
-          </div>
+        {/* Phase 6 Complete Card */}
+        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs">
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
               <Activity className="w-5 h-5" />
             </div>
             <div>
               <h2 className="font-bold text-slate-900 text-sm">Phase 6 — Admin CMS</h2>
-              <span className="text-xs text-amber-700 font-semibold">Active &amp; Operational</span>
+              <span className="text-xs text-emerald-600 font-semibold">Completed &amp; Operational</span>
             </div>
           </div>
           <p className="text-xs text-slate-600 leading-relaxed">
@@ -255,32 +268,35 @@ export const AdminDashboardPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Phase 7 Roadmap Card */}
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs">
+        {/* Phase 7 Active Card */}
+        <div className="bg-white p-6 rounded-2xl border border-purple-300/80 shadow-xs relative overflow-hidden">
+          <div className="absolute top-0 right-0 px-3 py-1 bg-purple-600 text-white font-bold text-[10px] uppercase tracking-wider rounded-bl-lg">
+            Active Phase
+          </div>
           <div className="flex items-center gap-3 mb-4">
             <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-700 flex items-center justify-center">
               <FileEdit className="w-5 h-5" />
             </div>
             <div>
               <h2 className="font-bold text-slate-900 text-sm">Phase 7 — Enquiries</h2>
-              <span className="text-xs text-purple-700 font-semibold">Upcoming Milestone</span>
+              <span className="text-xs text-purple-700 font-semibold">Active &amp; Connected</span>
             </div>
           </div>
           <p className="text-xs text-slate-600 leading-relaxed">
-            Customer quote request lifecycle, custom requirement dispatch, status updates (New, Quoted, Closed), and contact message inbox.
+            Live customer quotation workflows, custom requirement dispatch, status updates (New, Contacted, In Progress, Quoted, Closed), and direct contact message inbox.
           </p>
           <div className="mt-4 pt-4 border-t border-slate-100 space-y-2 text-xs text-slate-500">
             <div className="flex items-center gap-2">
-              <Clock className="w-3.5 h-3.5 text-slate-400" />
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
               <span>Quotation Request Workflow</span>
             </div>
             <div className="flex items-center gap-2">
-              <Clock className="w-3.5 h-3.5 text-slate-400" />
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
               <span>Custom Requirements Review</span>
             </div>
             <div className="flex items-center gap-2">
-              <Clock className="w-3.5 h-3.5 text-slate-400" />
-              <span>Contact Message Inbox</span>
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+              <span>Contact Message Inbox &amp; Status Controls</span>
             </div>
           </div>
         </div>
@@ -288,5 +304,6 @@ export const AdminDashboardPage: React.FC = () => {
     </div>
   );
 };
+
 
 export default AdminDashboardPage;

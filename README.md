@@ -191,4 +191,4 @@ With Phase 4 (Backend + Database + Product API Integration) completed, Phase 5 w
 3. Admin product management UI (CRUD operations for equipment catalogue).
 4. Customer quotation enquiry submission and customized requirement submission workflow.
 5. Automated transactional email alerts and PDF quote generation.
-6. Object storage integration for requirement attachment uploads.
+6. Object storage integration for requirement uploads.

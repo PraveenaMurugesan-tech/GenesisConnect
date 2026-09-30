@@ -82,12 +82,44 @@ class Settings(BaseSettings):
 
         return self
 
-    # Supabase Object Storage (Future Scope)
+    # Supabase & Object Storage Configuration (Phase 8)
     SUPABASE_URL: str = ""
     SUPABASE_KEY: str = ""
+    SUPABASE_SERVICE_ROLE_KEY: Optional[str] = None
+    STORAGE_PROVIDER: str = "supabase"  # "supabase", "local", "memory"
+    LOCAL_STORAGE_PATH: str = "uploads"
     SUPABASE_STORAGE_BUCKET_PRODUCT_IMAGES: str = "product-images"
     SUPABASE_STORAGE_BUCKET_PRODUCT_DOCS: str = "product-datasheets"
     SUPABASE_STORAGE_BUCKET_REQUIREMENTS: str = "requirement-documents"
+    SIGNED_URL_EXPIRATION_SECONDS: int = 3600
+
+    # Storage Size Limits (in Megabytes)
+    PRODUCT_IMAGE_MAX_SIZE_MB: int = 5
+    DATASHEET_MAX_SIZE_MB: int = 10
+    ENQUIRY_DOCUMENT_MAX_SIZE_MB: int = 10
+
+    # File Validation Whitelists
+    ALLOWED_IMAGE_EXTENSIONS: List[str] = [".jpg", ".jpeg", ".png", ".webp"]
+    ALLOWED_IMAGE_MIME_TYPES: List[str] = ["image/jpeg", "image/png", "image/webp"]
+    ALLOWED_DOCUMENT_EXTENSIONS: List[str] = [".pdf"]
+    ALLOWED_DOCUMENT_MIME_TYPES: List[str] = ["application/pdf"]
+
+    # Transactional Email Notification Configuration (Phase 8)
+    EMAIL_ENABLED: bool = True
+    EMAIL_PROVIDER: str = "console"  # "console", "smtp", "resend", "sendgrid"
+    EMAIL_FROM: str = "Genesis Power Equipments <no-reply@genesispower.in>"
+    ADMIN_NOTIFICATION_EMAIL: str = "sales@genesispower.in"
+    EMAIL_API_KEY: Optional[str] = None
+    SMTP_HOST: str = "smtp.gmail.com"
+    SMTP_PORT: int = 587
+    SMTP_USER: str = ""
+    SMTP_PASSWORD: str = ""
+    SMTP_USE_TLS: bool = True
+
+    # Security Hardening & Rate Limiting (Phase 8)
+    ENABLE_SECURITY_HEADERS: bool = True
+    RATE_LIMIT_ENABLED: bool = True
+    RATE_LIMIT_REQUESTS_PER_MINUTE: int = 15
 
     model_config = SettingsConfigDict(
         env_file=".env",

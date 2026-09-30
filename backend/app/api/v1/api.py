@@ -27,6 +27,7 @@ api_router.include_router(custom_requirements.router, prefix="/custom-requiremen
 api_router.include_router(contact.router, prefix="/contact-messages")
 api_router.include_router(contact.router, prefix="/contact")
 api_router.include_router(storage.router)
+api_router.include_router(storage.admin_router)
 api_router.include_router(content.router)
 api_router.include_router(announcements.router)
 

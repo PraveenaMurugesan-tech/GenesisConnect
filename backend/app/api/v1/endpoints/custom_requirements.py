@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from app.api.deps import get_db, get_current_admin
 from app.models.enquiry import CustomRequirement, RequirementStatus
 from app.models.user import User
+from app.services.storage import storage_service
 from app.schemas.enquiry import (
     CustomRequirementCreate,
     CustomRequirementUpdateStatus,
@@ -97,3 +98,43 @@ def update_custom_requirement_status(
     db.commit()
     db.refresh(req)
     return req
+
+
+@router.get("/{requirement_id}/document-url", summary="Get Signed Document URL for Custom Requirement")
+def get_custom_requirement_document_url(
+    requirement_id: int,
+    expires_in: int = Query(3600, ge=60, le=86400, description="Expiration in seconds"),
+    db: Session = Depends(get_db),
+    current_admin: User = Depends(get_current_admin),
+) -> Any:
+    """
+    Admin-only endpoint to generate a secure, temporary signed download URL
+    for the customer's attached technical requirement specification.
+    """
+    req = db.query(CustomRequirement).filter(CustomRequirement.id == requirement_id).first()
+    if not req:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Custom requirement with ID {requirement_id} not found",
+        )
+
+    if not req.document_url:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No technical document was attached to this custom requirement.",
+        )
+
+    signed_url = storage_service.get_enquiry_document_signed_url(
+        storage_key=req.document_url,
+        expires_in=expires_in,
+    )
+
+    return {
+        "status": "success",
+        "requirement_id": req.id,
+        "storage_key": req.document_url,
+        "document_name": req.document_name or "requirement.pdf",
+        "signed_url": signed_url,
+        "expires_in_seconds": expires_in,
+    }
+

@@ -253,6 +253,50 @@ async def public_upload_enquiry_document(
 
 
 # ==============================================================================
+# SECURE ENQUIRY DOCUMENT ACCESS (ADMIN ONLY)
+# ==============================================================================
+@admin_router.get(
+    "/enquiry-document-url",
+    summary="Get Secure Signed URL for Customer Enquiry Document",
+    response_description="Returns a temporary signed URL for authorized admin viewing",
+)
+def admin_get_enquiry_document_url(
+    storage_key: str = Query(..., description="Storage key of the private customer document"),
+    expires_in: int = Query(3600, ge=60, le=86400, description="URL validity in seconds (default: 1 hour)"),
+    current_admin: User = Depends(get_current_admin),
+) -> Dict[str, Any]:
+    """
+    Generates a secure, temporary signed URL allowing an authorized administrator
+    to inspect customer technical requirement attachments.
+    Never exposes customer documents to public unauthenticated users.
+    """
+    # Sanitize storage_key to prevent directory traversal
+    if ".." in storage_key or storage_key.startswith("/"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid storage key parameter. Path traversal tokens are forbidden.",
+        )
+
+    try:
+        signed_url = storage_service.get_enquiry_document_signed_url(
+            storage_key=storage_key,
+            expires_in=expires_in,
+        )
+        return {
+            "status": "success",
+            "storage_key": storage_key,
+            "signed_url": signed_url,
+            "expires_in_seconds": expires_in,
+        }
+    except Exception as e:
+        logger.error(f"Failed to generate signed document URL for key '{storage_key}': {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Unable to generate temporary signed download URL.",
+        )
+
+
+# ==============================================================================
 # ADMIN FILE REMOVAL
 # ==============================================================================
 @admin_router.delete(

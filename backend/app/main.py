@@ -16,10 +16,14 @@ from app.db.base import Base
 from app.db.session import engine
 
 # Configure application logging
+from app.core.logging_filter import SensitiveDataMaskingFilter
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
 )
+root_logger = logging.getLogger()
+root_logger.addFilter(SensitiveDataMaskingFilter())
 logger = logging.getLogger("genesisconnect.api")
 
 

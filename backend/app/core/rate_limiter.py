@@ -70,7 +70,11 @@ class AbuseProtectionMiddleware(BaseHTTPMiddleware):
     }
 
     async def dispatch(self, request: Request, call_next):
-        if not settings.RATE_LIMIT_ENABLED:
+        if (
+            not settings.RATE_LIMIT_ENABLED
+            or getattr(request.app.state, "testing", False)
+            or settings.ENVIRONMENT == "test"
+        ):
             return await call_next(request)
 
         # Only apply rate limiting to mutating POST requests on designated public endpoints

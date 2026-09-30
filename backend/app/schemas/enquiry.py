@@ -1,8 +1,9 @@
 from datetime import datetime
 from typing import Optional
-from pydantic import BaseModel, EmailStr, ConfigDict, Field
+from pydantic import BaseModel, EmailStr, ConfigDict, Field, field_validator
 from app.models.enquiry import QuoteStatus, RequirementStatus, ContactStatus
 from app.schemas.product import ProductResponse
+from app.core.sanitizer import sanitize_input_text
 
 
 # ==============================================================================
@@ -19,6 +20,11 @@ class QuoteRequestBase(BaseModel):
     quantity: Optional[str] = Field(None, max_length=50, description="Requested units or volume")
     requirement: Optional[str] = Field(None, description="Detailed equipment or technical requirement")
     message: Optional[str] = Field(None, description="Additional customer project notes")
+
+    @field_validator("customer_name", "company_name", "product_name", "quantity", "requirement", "message", mode="before")
+    @classmethod
+    def sanitize_quote_fields(cls, v: Optional[str]) -> Optional[str]:
+        return sanitize_input_text(v)
 
 
 class QuoteRequestCreate(QuoteRequestBase):
@@ -57,6 +63,15 @@ class CustomRequirementBase(BaseModel):
     document_url: Optional[str] = Field(None, max_length=512, description="Storage key or reference URL to technical specification document")
     document_name: Optional[str] = Field(None, max_length=255, description="Original uploaded filename of attachment")
 
+    @field_validator(
+        "customer_name", "company_name", "product", "capacity", "battery_specifications",
+        "backup_requirements", "equipment_information", "additional_requirements", "document_name",
+        mode="before",
+    )
+    @classmethod
+    def sanitize_custom_fields(cls, v: Optional[str]) -> Optional[str]:
+        return sanitize_input_text(v)
+
 
 class CustomRequirementCreate(CustomRequirementBase):
     pass
@@ -86,6 +101,11 @@ class ContactMessageBase(BaseModel):
     phone: Optional[str] = Field(None, max_length=50, description="Sender telephone or mobile")
     subject: Optional[str] = Field(None, max_length=255, description="Message subject line")
     message: str = Field(..., min_length=3, description="Message body content")
+
+    @field_validator("name", "company_name", "subject", "message", mode="before")
+    @classmethod
+    def sanitize_contact_fields(cls, v: Optional[str]) -> Optional[str]:
+        return sanitize_input_text(v)
 
 
 class ContactMessageCreate(ContactMessageBase):

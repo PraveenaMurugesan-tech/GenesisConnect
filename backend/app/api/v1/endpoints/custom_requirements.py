@@ -6,6 +6,7 @@ from app.api.deps import get_db, get_current_admin
 from app.models.enquiry import CustomRequirement, RequirementStatus
 from app.models.user import User
 from app.services.storage import storage_service
+from app.services.email import email_service
 from app.schemas.enquiry import (
     CustomRequirementCreate,
     CustomRequirementUpdateStatus,
@@ -31,6 +32,40 @@ def submit_custom_requirement(
     db.add(req)
     db.commit()
     db.refresh(req)
+
+    # Safe email dispatch (never rolls back or fails saved requirement)
+    ref_id = f"GEN-REQ-{req.id:05d}"
+    time_str = req.created_at.strftime("%Y-%m-%d %H:%M:%S UTC") if req.created_at else None
+
+    email_service.send_custom_requirement_confirmation(
+        customer_name=req.customer_name,
+        customer_email=req.email,
+        reference_id=ref_id,
+        product_category=req.product,
+        capacity=req.capacity,
+        has_attachment=bool(req.document_url),
+        created_at_str=time_str,
+    )
+
+    email_service.send_admin_notification(
+        enquiry_type="Customized Requirement",
+        reference_id=ref_id,
+        customer_name=req.customer_name,
+        company_name=req.company_name,
+        email=req.email,
+        phone=req.phone,
+        summary_details={
+            "System Classification": req.product or "N/A",
+            "Capacity": req.capacity or "N/A",
+            "Battery Specs": req.battery_specifications or "N/A",
+            "Backup Desired": req.backup_requirements or "N/A",
+            "Equipment Info": req.equipment_information or "N/A",
+            "Additional Notes": req.additional_requirements or "N/A",
+            "Attachment Document": req.document_name or ("Attached" if req.document_url else "None"),
+        },
+        created_at_str=time_str,
+    )
+
     return req
 
 

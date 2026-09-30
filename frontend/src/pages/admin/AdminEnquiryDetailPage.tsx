@@ -19,10 +19,13 @@ import {
   ShieldCheck,
   ExternalLink,
   Save,
+  Lock,
+  Download,
 } from "lucide-react";
 
 import { Card, CardContent } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
+import { getEnquiryDocumentSignedUrl } from "../../services/storageService";
 import {
   getAdminQuoteRequest,
   updateQuoteRequestStatus,
@@ -58,6 +61,28 @@ export const AdminEnquiryDetailPage: React.FC = () => {
   // General UI states
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [fetchingDocUrl, setFetchingDocUrl] = useState(false);
+  const [docDownloadError, setDocDownloadError] = useState<string | null>(null);
+
+  const handleDownloadAttachment = async () => {
+    if (!customData?.id) return;
+    setFetchingDocUrl(true);
+    setDocDownloadError(null);
+    try {
+      const res = await getEnquiryDocumentSignedUrl(customData.id);
+      if (res.signed_url) {
+        window.open(res.signed_url, "_blank", "noopener,noreferrer");
+      } else {
+        setDocDownloadError("Unable to retrieve signed download URL.");
+      }
+    } catch (err: any) {
+      setDocDownloadError(
+        err.response?.data?.detail || "Failed to generate temporary signed download URL."
+      );
+    } finally {
+      setFetchingDocUrl(false);
+    }
+  };
 
   const fetchEnquiry = useCallback(async () => {
     if (!id || isNaN(id)) {
@@ -463,12 +488,45 @@ export const AdminEnquiryDetailPage: React.FC = () => {
                   )}
 
                   {customData.document_url && (
-                    <div className="p-3 rounded-lg bg-sky-50 border border-sky-200 flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <FileCheck className="w-4 h-4 text-sky-700" />
-                        <span className="font-medium text-sky-900">Attached Specification File:</span>
-                        <span className="font-mono text-xs text-sky-800">{customData.document_url}</span>
+                    <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-lg bg-sky-100 text-sky-700 flex items-center justify-center flex-shrink-0">
+                            <FileCheck className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <div className="font-bold text-slate-900 text-xs truncate max-w-xs sm:max-w-md">
+                              {customData.document_name || "Technical_Requirement_Document.pdf"}
+                            </div>
+                            <div className="flex items-center gap-1.5 text-[11px] text-slate-500 mt-0.5">
+                              <Lock className="w-3 h-3 text-emerald-600" />
+                              <span>Encrypted Private Vault</span>
+                              <span>&bull;</span>
+                              <span className="font-mono text-[10px] text-slate-400 truncate max-w-[140px]">
+                                {customData.document_url}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="sm"
+                          onClick={handleDownloadAttachment}
+                          disabled={fetchingDocUrl}
+                          className="flex items-center gap-1.5 whitespace-nowrap self-start sm:self-auto"
+                        >
+                          <Download className="w-3.5 h-3.5" />
+                          <span>{fetchingDocUrl ? "Generating Link..." : "Download / Inspect"}</span>
+                        </Button>
                       </div>
+
+                      {docDownloadError && (
+                        <div className="p-2 rounded bg-rose-50 border border-rose-200 text-xs text-rose-700">
+                          {docDownloadError}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

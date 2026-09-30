@@ -13,8 +13,8 @@ To maintain optimal relational database performance, **GenesisConnect** decouple
 | Bucket Name | Access Policy | File Types Allowed | Max File Size | Use Case |
 | :--- | :--- | :--- | :--- | :--- |
 | `product-images` | **Public** Read | `image/jpeg`, `image/png`, `image/webp` | 5 MB | Product catalog primary photos, gallery images, service hero images. |
-| `product-datasheets` | **Public** Read | `application/pdf` | 25 MB | Technical specification sheets, operation manuals, dimensional drawings. |
-| `requirement-documents` | **Restricted / Private** | `application/pdf`, `image/*`, `application/zip` | 20 MB | Customer-uploaded site drawings, single-line diagrams, tender RFPs. |
+| `product-datasheets` | **Public** Read | `application/pdf` | 10 MB | Technical specification sheets, operation manuals, dimensional drawings. |
+| `requirement-documents` | **Restricted / Private** | `application/pdf` | 10 MB | Customer-uploaded site drawings, single-line diagrams (retrieved via signed URLs only). |
 
 ---
 

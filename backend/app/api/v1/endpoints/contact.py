@@ -10,6 +10,7 @@ from app.schemas.enquiry import (
     ContactMessageUpdateStatus,
     ContactMessageResponse,
 )
+from app.services.email import email_service
 
 router = APIRouter(tags=["Contact Messages"])
 
@@ -30,6 +31,33 @@ def submit_contact_message(
     db.add(contact)
     db.commit()
     db.refresh(contact)
+
+    # Safe email dispatch (never rolls back or fails saved contact message)
+    ref_id = f"GEN-MSG-{contact.id:05d}"
+    time_str = contact.created_at.strftime("%Y-%m-%d %H:%M:%S UTC") if contact.created_at else None
+
+    email_service.send_contact_confirmation(
+        customer_name=contact.name,
+        customer_email=contact.email,
+        reference_id=ref_id,
+        subject_line=contact.subject,
+        created_at_str=time_str,
+    )
+
+    email_service.send_admin_notification(
+        enquiry_type="Contact Message",
+        reference_id=ref_id,
+        customer_name=contact.name,
+        company_name=contact.company_name,
+        email=contact.email,
+        phone=contact.phone or "Not provided",
+        summary_details={
+            "Subject": contact.subject or "General Inquiry",
+            "Message Body": contact.message,
+        },
+        created_at_str=time_str,
+    )
+
     return contact
 
 

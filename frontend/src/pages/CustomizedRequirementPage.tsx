@@ -12,7 +12,6 @@ import {
   Phone,
   Cpu,
   ChevronRight,
-  Info,
 } from "lucide-react";
 import { Container } from "../components/common/Container";
 import { SectionHeader } from "../components/common/SectionHeader";
@@ -22,6 +21,7 @@ import { Textarea } from "../components/ui/Textarea";
 import { Button } from "../components/ui/Button";
 import { Card, CardContent } from "../components/ui/Card";
 import { submitCustomRequirement } from "../services/enquiryService";
+import { uploadEnquiryDocument } from "../services/storageService";
 
 interface CustomFormState {
   customerName: string;
@@ -73,6 +73,8 @@ export const CustomizedRequirementPage: React.FC = () => {
 
   const [errors, setErrors] = useState<CustomFormErrors>({});
   const [selectedFile, setSelectedFile] = useState<{ name: string; size: string } | null>(null);
+  const [selectedRawFile, setSelectedRawFile] = useState<File | null>(null);
+  const [fileError, setFileError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [requirementReference, setRequirementReference] = useState("");
@@ -93,18 +95,36 @@ export const CustomizedRequirementPage: React.FC = () => {
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFileError(null);
     const file = e.target.files?.[0];
     if (file) {
+      const isPdf = file.name.toLowerCase().endsWith(".pdf") || file.type === "application/pdf";
+      if (!isPdf) {
+        setFileError("Only technical specification documents in PDF format are accepted.");
+        setSelectedFile(null);
+        setSelectedRawFile(null);
+        return;
+      }
+      if (file.size > 10 * 1024 * 1024) {
+        setFileError("Document size exceeds the maximum limit of 10 MB.");
+        setSelectedFile(null);
+        setSelectedRawFile(null);
+        return;
+      }
+
       const sizeStr =
         file.size > 1024 * 1024
           ? `${(file.size / (1024 * 1024)).toFixed(1)} MB`
           : `${Math.round(file.size / 1024)} KB`;
       setSelectedFile({ name: file.name, size: sizeStr });
+      setSelectedRawFile(file);
     }
   };
 
   const handleRemoveFile = () => {
     setSelectedFile(null);
+    setSelectedRawFile(null);
+    setFileError(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
@@ -153,6 +173,25 @@ export const CustomizedRequirementPage: React.FC = () => {
     setIsSubmitting(true);
     setServerError(null);
 
+    let docUrl: string | undefined = undefined;
+    let docName: string | undefined = undefined;
+
+    // Securely upload technical specification document if attached
+    if (selectedRawFile) {
+      try {
+        const uploadRes = await uploadEnquiryDocument(selectedRawFile);
+        docUrl = uploadRes.storage_key;
+        docName = uploadRes.filename || selectedRawFile.name;
+      } catch (uploadErr: any) {
+        const errDetail =
+          uploadErr.response?.data?.detail ||
+          "Failed to upload technical specification PDF. Please ensure file is under 10MB.";
+        setServerError(typeof errDetail === "string" ? errDetail : JSON.stringify(errDetail));
+        setIsSubmitting(false);
+        return;
+      }
+    }
+
     try {
       const res = await submitCustomRequirement({
         customer_name: formData.customerName.trim(),
@@ -165,7 +204,8 @@ export const CustomizedRequirementPage: React.FC = () => {
         backup_requirements: formData.backupRequirements.trim() || undefined,
         equipment_information: formData.equipmentInfo.trim(),
         additional_requirements: formData.additionalRequirements.trim() || undefined,
-        document_url: selectedFile ? `attachment:${selectedFile.name}` : undefined,
+        document_url: docUrl,
+        document_name: docName,
       });
 
       const refId = `GEN-REQ-${String(res.id).padStart(5, "0")}`;
@@ -504,7 +544,7 @@ export const CustomizedRequirementPage: React.FC = () => {
                       <input
                         ref={fileInputRef}
                         type="file"
-                        accept=".pdf,.dwg,.png,.jpg,.jpeg"
+                        accept=".pdf,application/pdf"
                         onChange={handleFileChange}
                         className="hidden"
                       />
@@ -514,17 +554,23 @@ export const CustomizedRequirementPage: React.FC = () => {
                       </div>
 
                       <div className="text-xs font-bold text-slate-800 group-hover:text-sky-700 transition-colors">
-                        Click to upload Electrical Single Line Diagram (SLD) or Site Layout
+                        Click to upload Electrical Single Line Diagram (SLD) or Technical Specification
                       </div>
                       <div className="text-[11px] text-slate-500 mt-1">
-                        Supported: PDF, DWG, PNG, JPG up to 15MB
+                        Format: PDF document up to 10 MB
                       </div>
                     </div>
                   )}
 
+                  {fileError && (
+                    <div className="p-2.5 rounded-lg bg-rose-50 border border-rose-200 text-xs text-rose-700">
+                      {fileError}
+                    </div>
+                  )}
+
                   <div className="flex items-center gap-1.5 text-[11px] text-slate-500">
-                    <Info className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
-                    <span>File upload control is UI-only in Phase 2; direct Supabase storage transfer will connect in Phase 3.</span>
+                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" />
+                    <span>Protected by GenesisConnect encrypted technical document vault. Retained exclusively for engineering review.</span>
                   </div>
                 </div>
 

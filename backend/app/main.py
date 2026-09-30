@@ -16,10 +16,14 @@ from app.db.base import Base
 from app.db.session import engine
 
 # Configure application logging
+from app.core.logging_filter import SensitiveDataMaskingFilter
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
 )
+root_logger = logging.getLogger()
+root_logger.addFilter(SensitiveDataMaskingFilter())
 logger = logging.getLogger("genesisconnect.api")
 
 
@@ -57,6 +61,9 @@ app = FastAPI(
 # ------------------------------------------------------------------------------
 # CORS Configuration (Restricted to configured environment origins)
 # ------------------------------------------------------------------------------
+from app.core.security_headers import SecurityHeadersMiddleware
+from app.core.rate_limiter import AbuseProtectionMiddleware
+
 allowed_origins: List[str] = []
 if isinstance(settings.CORS_ORIGINS, list):
     allowed_origins.extend([str(o).rstrip("/") for o in settings.CORS_ORIGINS if o])
@@ -68,9 +75,19 @@ if settings.FRONTEND_URL:
     if clean_frontend not in allowed_origins:
         allowed_origins.append(clean_frontend)
 
-# Ensure no empty origin is passed
+# Ensure no empty origin is passed and remove wildcard in production
 allowed_origins = list(set([o for o in allowed_origins if o]))
+if settings.ENVIRONMENT in ("production", "prod") and "*" in allowed_origins:
+    logger.warning("Unrestricted wildcard '*' origin detected in production. Removing wildcard for CORS security.")
+    allowed_origins.remove("*")
 
+# Register Security Headers Middleware (outermost for all responses)
+app.add_middleware(SecurityHeadersMiddleware)
+
+# Register Abuse Protection Rate Limiter Middleware
+app.add_middleware(AbuseProtectionMiddleware)
+
+# Register Hardened CORS Middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,

@@ -12,6 +12,8 @@ from app.schemas.enquiry import (
     QuoteRequestResponse,
 )
 
+from app.services.email import email_service
+
 router = APIRouter(tags=["Quote Requests"])
 
 
@@ -44,6 +46,36 @@ def submit_quote_request(
     db.add(quote)
     db.commit()
     db.refresh(quote)
+
+    # Safe email dispatch (never rolls back or fails saved quote)
+    ref_id = f"GEN-QUO-{quote.id:05d}"
+    time_str = quote.created_at.strftime("%Y-%m-%d %H:%M:%S UTC") if quote.created_at else None
+
+    email_service.send_quote_confirmation(
+        customer_name=quote.customer_name,
+        customer_email=quote.email,
+        reference_id=ref_id,
+        product_name=quote.product_name,
+        quantity=quote.quantity,
+        created_at_str=time_str,
+    )
+
+    email_service.send_admin_notification(
+        enquiry_type="Quote Request",
+        reference_id=ref_id,
+        customer_name=quote.customer_name,
+        company_name=quote.company_name,
+        email=quote.email,
+        phone=quote.phone,
+        summary_details={
+            "Product": quote.product_name or "N/A",
+            "Quantity": quote.quantity or "N/A",
+            "Requirement": quote.requirement or "N/A",
+            "Message": quote.message or "N/A",
+        },
+        created_at_str=time_str,
+    )
+
     return quote
 
 

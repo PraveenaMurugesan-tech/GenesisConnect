@@ -86,6 +86,7 @@ class CustomRequirement(Base):
     equipment_information: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     additional_requirements: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     document_url: Mapped[Optional[str]] = mapped_column(String(512), nullable=True)
+    document_name: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     status: Mapped[RequirementStatus] = mapped_column(
         Enum(RequirementStatus, name="requirement_status_enum"),
         default=RequirementStatus.NEW,

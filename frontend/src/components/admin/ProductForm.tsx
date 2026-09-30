@@ -11,10 +11,13 @@ import {
   Layers,
   Image,
   Tag,
+  Upload,
+  FileText,
 } from "lucide-react";
 import { Button } from "../ui/Button";
 import { Card, CardContent } from "../ui/Card";
 import { apiClient } from "../../services/api";
+import { uploadProductImage, uploadProductDatasheet } from "../../services/storageService";
 import { Product, PRODUCT_CATEGORIES, ProductCategory, ProductSpecification } from "../../types";
 import { SpecificationEditor } from "./SpecificationEditor";
 
@@ -60,6 +63,70 @@ export const ProductForm: React.FC<ProductFormProps> = ({ productId }) => {
   const [clientErrors, setClientErrors] = useState<Record<string, string>>({});
   const [serverError, setServerError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  // Storage Upload States
+  const [uploadingImage, setUploadingImage] = useState<boolean>(false);
+  const [uploadingDatasheet, setUploadingDatasheet] = useState<boolean>(false);
+  const [imageUploadError, setImageUploadError] = useState<string | null>(null);
+  const [datasheetUploadError, setDatasheetUploadError] = useState<string | null>(null);
+
+  const handleImageFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImageUploadError(null);
+
+    const validTypes = ["image/jpeg", "image/png", "image/webp"];
+    const ext = file.name.substring(file.name.lastIndexOf(".")).toLowerCase();
+    if (!validTypes.includes(file.type) && ![".jpg", ".jpeg", ".png", ".webp"].includes(ext)) {
+      setImageUploadError("Allowed formats: JPEG, PNG, WebP.");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setImageUploadError("Image exceeds maximum 5 MB limit.");
+      return;
+    }
+
+    setUploadingImage(true);
+    try {
+      const res = await uploadProductImage(file);
+      if (res.url) {
+        setImage(res.url);
+      }
+    } catch (err: any) {
+      setImageUploadError(err.response?.data?.detail || "Failed to upload product image.");
+    } finally {
+      setUploadingImage(false);
+      e.target.value = "";
+    }
+  };
+
+  const handleDatasheetFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setDatasheetUploadError(null);
+
+    if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
+      setDatasheetUploadError("Only PDF documents are supported for technical datasheets.");
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      setDatasheetUploadError("Datasheet exceeds maximum 10 MB limit.");
+      return;
+    }
+
+    setUploadingDatasheet(true);
+    try {
+      const res = await uploadProductDatasheet(file);
+      if (res.url) {
+        setDatasheet(res.url);
+      }
+    } catch (err: any) {
+      setDatasheetUploadError(err.response?.data?.detail || "Failed to upload technical datasheet.");
+    } finally {
+      setUploadingDatasheet(false);
+      e.target.value = "";
+    }
+  };
 
   // Auto-generate slug from name if not manually modified
   const generateSlugFromName = (input: string): string => {
@@ -550,33 +617,138 @@ export const ProductForm: React.FC<ProductFormProps> = ({ productId }) => {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             {/* Primary Image */}
-            <div>
-              <label htmlFor="primary-image" className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                Primary Product Image Path / URL
+            <div className="space-y-2">
+              <label htmlFor="primary-image" className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                Primary Product Image
               </label>
-              <input
-                id="primary-image"
-                type="text"
-                value={image}
-                onChange={(e) => setImage(e.target.value)}
-                placeholder="/images/products/industrial-ups.svg"
-                className="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 bg-white text-sm font-mono text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
-              />
+
+              {image ? (
+                <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3 overflow-hidden">
+                    <img
+                      src={image}
+                      alt="Product preview"
+                      className="w-12 h-12 object-contain rounded bg-white border border-slate-200 p-0.5 flex-shrink-0"
+                      onError={(e) => {
+                        // Fallback icon if URL is broken
+                        (e.target as HTMLElement).style.display = "none";
+                      }}
+                    />
+                    <div className="overflow-hidden">
+                      <span className="text-xs font-mono text-slate-800 truncate block">
+                        {image}
+                      </span>
+                      <span className="text-[11px] text-emerald-700 font-semibold block">
+                        Active Catalogue Photo
+                      </span>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setImage("")}
+                    className="p-1 text-slate-400 hover:text-rose-600 rounded transition-colors"
+                    title="Remove image"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              ) : null}
+
+              <div className="flex gap-2">
+                <input
+                  id="primary-image"
+                  type="text"
+                  value={image}
+                  onChange={(e) => setImage(e.target.value)}
+                  placeholder="/images/products/industrial-ups.svg or CDN URL"
+                  className="flex-1 px-3.5 py-2 rounded-lg border border-slate-200 bg-white text-xs font-mono text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
+                />
+                <label className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 rounded-lg text-xs font-semibold transition-colors">
+                  <Upload className="w-3.5 h-3.5" />
+                  <span>{uploadingImage ? "Uploading..." : "Upload File"}</span>
+                  <input
+                    type="file"
+                    accept=".jpg,.jpeg,.png,.webp,image/*"
+                    onChange={handleImageFileUpload}
+                    disabled={uploadingImage}
+                    className="hidden"
+                  />
+                </label>
+              </div>
+
+              {imageUploadError && (
+                <p className="text-xs text-rose-600 mt-1">{imageUploadError}</p>
+              )}
+              <p className="text-[11px] text-slate-400">
+                JPEG, PNG, or WebP up to 5 MB.
+              </p>
             </div>
 
             {/* Datasheet Reference */}
-            <div>
-              <label htmlFor="datasheet-url" className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                Datasheet PDF Document URL
+            <div className="space-y-2">
+              <label htmlFor="datasheet-url" className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                Technical Datasheet (PDF)
               </label>
-              <input
-                id="datasheet-url"
-                type="text"
-                value={datasheet}
-                onChange={(e) => setDatasheet(e.target.value)}
-                placeholder="/datasheets/industrial-ups-spec.pdf"
-                className="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 bg-white text-sm font-mono text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
-              />
+
+              {datasheet ? (
+                <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2.5 overflow-hidden">
+                    <div className="w-9 h-9 rounded bg-amber-100 text-amber-800 flex items-center justify-center flex-shrink-0">
+                      <FileText className="w-4 h-4" />
+                    </div>
+                    <div className="overflow-hidden">
+                      <span className="text-xs font-mono text-slate-800 truncate block">
+                        {datasheet}
+                      </span>
+                      <a
+                        href={datasheet}
+                        target="_blank"
+                        rel="noreferrer noopener"
+                        className="text-[11px] text-amber-700 hover:text-amber-800 font-semibold inline-flex items-center gap-1"
+                      >
+                        Preview Document &rarr;
+                      </a>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setDatasheet("")}
+                    className="p-1 text-slate-400 hover:text-rose-600 rounded transition-colors"
+                    title="Remove datasheet"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              ) : null}
+
+              <div className="flex gap-2">
+                <input
+                  id="datasheet-url"
+                  type="text"
+                  value={datasheet}
+                  onChange={(e) => setDatasheet(e.target.value)}
+                  placeholder="/datasheets/spec.pdf or CDN URL"
+                  className="flex-1 px-3.5 py-2 rounded-lg border border-slate-200 bg-white text-xs font-mono text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
+                />
+                <label className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 rounded-lg text-xs font-semibold transition-colors">
+                  <Upload className="w-3.5 h-3.5" />
+                  <span>{uploadingDatasheet ? "Uploading..." : "Upload PDF"}</span>
+                  <input
+                    type="file"
+                    accept=".pdf,application/pdf"
+                    onChange={handleDatasheetFileUpload}
+                    disabled={uploadingDatasheet}
+                    className="hidden"
+                  />
+                </label>
+              </div>
+
+              {datasheetUploadError && (
+                <p className="text-xs text-rose-600 mt-1">{datasheetUploadError}</p>
+              )}
+              <p className="text-[11px] text-slate-400">
+                Official PDF engineering document up to 10 MB.
+              </p>
             </div>
           </div>
 

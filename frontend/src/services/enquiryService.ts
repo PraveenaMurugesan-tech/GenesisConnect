@@ -37,6 +37,7 @@ export interface CustomRequirementPayload {
   equipment_information?: string;
   additional_requirements?: string;
   document_url?: string;
+  document_name?: string;
 }
 
 export interface ContactMessagePayload {

@@ -155,6 +155,7 @@ export interface CustomRequirement {
   equipment_information?: string;
   additional_requirements?: string;
   document_url?: string;
+  document_name?: string;
   status: RequirementStatus;
   created_at: string;
   updated_at: string;

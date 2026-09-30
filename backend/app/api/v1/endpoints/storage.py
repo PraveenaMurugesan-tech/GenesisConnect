@@ -145,6 +145,114 @@ async def admin_upload_product_datasheet(
 
 
 # ==============================================================================
+# ENQUIRY DOCUMENT UPLOADS (STRICTLY PRIVATE)
+# ==============================================================================
+@admin_router.post(
+    "/enquiry-document",
+    summary="Upload Enquiry Attachment (Admin)",
+    response_description="Returns uploaded document storage key and metadata (strictly private)",
+)
+async def admin_upload_enquiry_document(
+    file: UploadFile = File(..., description="Customer requirement PDF document"),
+    current_admin: User = Depends(get_current_admin),
+) -> Dict[str, Any]:
+    """
+    Admin endpoint to upload/attach technical requirement documentation.
+    Strictly validates PDF format and stores within the private bucket.
+    """
+    contents = await file.read()
+    try:
+        result = storage_service.upload_enquiry_document(
+            file_bytes=contents,
+            original_filename=file.filename or "requirement.pdf",
+            content_type=file.content_type or "application/pdf",
+        )
+        return {
+            "status": "success",
+            "message": "Enquiry document stored in private vault.",
+            **result,
+        }
+    except (InvalidFileTypeError, FileValidationError) as e:
+        logger.warning(f"Enquiry document validation failed: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+    except FileSizeLimitExceededError as e:
+        logger.warning(f"Enquiry document size exceeded: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail=str(e),
+        )
+    except StorageProviderError as e:
+        logger.error(f"Storage provider failed on enquiry document upload: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Storage provider failure. Please check storage credentials and network connectivity.",
+        )
+    except Exception as e:
+        logger.error(f"Unexpected error uploading enquiry document: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An unexpected error occurred while processing the enquiry document.",
+        )
+
+
+@router.post(
+    "/enquiry-document",
+    summary="Upload Customer Requirement Document",
+    response_description="Returns secure storage key for enquiry form attachment",
+)
+async def public_upload_enquiry_document(
+    file: UploadFile = File(..., description="Customer technical specification PDF"),
+) -> Dict[str, Any]:
+    """
+    Public customer endpoint to upload equipment specifications during customized requirement submission.
+    - Allowed type: PDF only.
+    - Validates binary magic byte (%PDF-).
+    - File size limit enforced from environment.
+    - Files are stored in a private bucket; NO public URL is ever issued.
+    """
+    contents = await file.read()
+    try:
+        result = storage_service.upload_enquiry_document(
+            file_bytes=contents,
+            original_filename=file.filename or "requirement.pdf",
+            content_type=file.content_type or "application/pdf",
+        )
+        return {
+            "status": "success",
+            "message": "Technical requirement document uploaded securely.",
+            **result,
+        }
+    except (InvalidFileTypeError, FileValidationError) as e:
+        logger.warning(f"Customer document validation failed: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+    except FileSizeLimitExceededError as e:
+        logger.warning(f"Customer document size exceeded: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail=str(e),
+        )
+    except StorageProviderError as e:
+        logger.error(f"Storage provider failed on customer document upload: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Storage provider failure. Please check storage credentials and network connectivity.",
+        )
+    except Exception as e:
+        logger.error(f"Unexpected error uploading customer document: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An unexpected error occurred while processing your document.",
+        )
+
+
+
+# ==============================================================================
 # ADMIN FILE REMOVAL
 # ==============================================================================
 @admin_router.delete(

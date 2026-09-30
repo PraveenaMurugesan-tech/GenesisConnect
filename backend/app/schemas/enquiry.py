@@ -54,7 +54,8 @@ class CustomRequirementBase(BaseModel):
     backup_requirements: Optional[str] = Field(None, max_length=255, description="Desired backup run time")
     equipment_information: Optional[str] = Field(None, description="Load characteristics, machinery, or plant scope")
     additional_requirements: Optional[str] = Field(None, description="Environmental, bypass, or monitoring requirements")
-    document_url: Optional[str] = Field(None, max_length=512, description="Reference URL to technical specification document")
+    document_url: Optional[str] = Field(None, max_length=512, description="Storage key or reference URL to technical specification document")
+    document_name: Optional[str] = Field(None, max_length=255, description="Original uploaded filename of attachment")
 
 
 class CustomRequirementCreate(CustomRequirementBase):

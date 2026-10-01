@@ -116,10 +116,11 @@ class Settings(BaseSettings):
     SMTP_PASSWORD: str = ""
     SMTP_USE_TLS: bool = True
 
-    # Security Hardening & Rate Limiting (Phase 8)
+    # Security Hardening & Rate Limiting (Phase 8 & 9)
     ENABLE_SECURITY_HEADERS: bool = True
     RATE_LIMIT_ENABLED: bool = True
     RATE_LIMIT_REQUESTS_PER_MINUTE: int = 15
+    ENABLE_DOCS: bool = False
 
     model_config = SettingsConfigDict(
         env_file=".env",

@@ -140,6 +140,7 @@ export const RequestQuotePage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (isSubmitting) return;
     if (!validate()) return;
 
     setIsSubmitting(true);

@@ -13,7 +13,7 @@ from fastapi.responses import JSONResponse
 from app.core.config import settings
 from app.api.v1.api import api_router
 from app.db.base import Base
-from app.db.session import engine
+from app.db.session import engine, check_db_connection
 
 # Configure application logging
 from app.core.logging_filter import SensitiveDataMaskingFilter
@@ -48,13 +48,17 @@ async def lifespan(app: FastAPI):
     yield
 
 
+# Determine if Swagger/OpenAPI documentation should be publicly exposed
+is_production = settings.ENVIRONMENT in ("production", "prod")
+docs_enabled = not is_production or getattr(settings, "ENABLE_DOCS", False)
+
 app = FastAPI(
     title=settings.PROJECT_NAME,
     description="Official Backend API for Genesis Power Equipments Pvt. Ltd. (GenesisConnect) — Product Catalogue & Customer Management System",
     version="1.0.0",
-    openapi_url=f"{settings.API_V1_STR}/openapi.json",
-    docs_url="/docs",
-    redoc_url="/redoc",
+    openapi_url=f"{settings.API_V1_STR}/openapi.json" if docs_enabled else None,
+    docs_url="/docs" if docs_enabled else None,
+    redoc_url="/redoc" if docs_enabled else None,
     lifespan=lifespan,
 )
 
@@ -177,6 +181,6 @@ def root():
         "system": "GenesisConnect API",
         "client": "Genesis Power Equipments Pvt. Ltd.",
         "status": "online",
-        "documentation": "/docs",
+        "documentation": "/docs" if docs_enabled else "disabled in production",
         "v1_base": settings.API_V1_STR,
     }

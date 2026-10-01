@@ -32,7 +32,7 @@ def init_db(db: Session) -> None:
                 "Fuel Tank Capacity": "450 Litres",
             },
             image_url="https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=800&q=80",
-            datasheet_url="https://example.com/datasheets/genesis-250kva.pdf",
+            datasheet_url=None,
             is_active=True,
         )
         db.add(sample_product)

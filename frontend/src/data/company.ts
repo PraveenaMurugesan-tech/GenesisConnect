@@ -11,13 +11,13 @@ export const COMPANY_INFO = {
     "Genesis Power Equipments Pvt. Ltd. is an established engineering enterprise dedicated to power conditioning, industrial UPS systems, servo stabilizers, and turnkey electrical resilience.",
   longAbout:
     "Genesis Power Equipments Pvt. Ltd. engineers mission-critical power conditioning, industrial uninterruptible power systems, static voltage stabilizers, and medical imaging power solutions. We serve demanding healthcare facilities, manufacturing plants, and commercial infrastructure with dependable, engineered power protection.",
-  
+
   contact: {
     address: {
-      line1: "Industrial Estate, Guindy",
-      city: "Chennai",
-      state: "Tamil Nadu",
-      postalCode: "600032",
+      line1: "35, Kempegowda Service Rd, Domlur I Stage",
+      city: "Bengaluru",
+      state: "Karnataka",
+      postalCode: "560071",
       country: "India",
       full: "Industrial Estate, Guindy, Chennai, Tamil Nadu 600032, India",
     },

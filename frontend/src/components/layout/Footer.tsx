@@ -129,20 +129,20 @@ export const Footer: React.FC = () => {
                 <MapPin className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" aria-hidden="true" />
                 <span>
                   Genesis Power Equipments Pvt. Ltd.<br />
-                  Industrial Estate, Guindy,<br />
-                  Chennai, Tamil Nadu, India
+                  35, Kempegowda Service Rd,<br />
+                  Domlur I Stage,Bengaluru, Karnataka-560071
                 </span>
               </div>
               <div className="flex items-center gap-2.5">
                 <Phone className="w-4 h-4 text-amber-500 flex-shrink-0" aria-hidden="true" />
-                <a href="tel:+914424980000" className="hover:text-white transition-colors">
-                  +91 (0) 44 2498 0000
+                <a href="tel:+919341252590" className="hover:text-white transition-colors">
+                  +91 9341252590
                 </a>
               </div>
               <div className="flex items-center gap-2.5">
                 <Mail className="w-4 h-4 text-amber-500 flex-shrink-0" aria-hidden="true" />
-                <a href="mailto:info@genesispower.in" className="hover:text-white transition-colors">
-                  info@genesispower.in
+                <a href="mailto:genesisupsinfo@gmail.com" className="hover:text-white transition-colors">
+                  genesisupsinfo@gmail.com
                 </a>
               </div>
             </address>

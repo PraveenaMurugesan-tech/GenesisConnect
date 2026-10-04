@@ -74,18 +74,18 @@ export const Navbar: React.FC = () => {
           {/* Contact Details */}
           <div className="flex flex-wrap items-center gap-4 sm:gap-6">
             <a
-              href="tel:+914424980000"
+              href="tel:+919341252590"
               className="inline-flex items-center gap-1.5 hover:text-amber-400 transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-amber-400 rounded px-1"
             >
               <Phone className="w-3.5 h-3.5 text-amber-500" aria-hidden="true" />
-              <span>+91 (0) 44 2498 0000 / 24/7 Technical Support</span>
+              <span>+91 93412 52590 / 24/7 Technical Support</span>
             </a>
             <a
-              href="mailto:info@genesispower.in"
+              href="mailto: genesisupsinfo@gmail.com"
               className="hidden md:inline-flex items-center gap-1.5 hover:text-amber-400 transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-amber-400 rounded px-1"
             >
               <Mail className="w-3.5 h-3.5 text-amber-500" aria-hidden="true" />
-              <span>info@genesispower.in</span>
+              <span>genesisupsinfo@gmail.com </span>
             </a>
           </div>
 
@@ -140,10 +140,9 @@ export const Navbar: React.FC = () => {
                 end={item.path === "/"}
                 aria-current={location.pathname === item.path ? "page" : undefined}
                 className={({ isActive }) =>
-                  `px-3.5 py-2 rounded-lg text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 ${
-                    isActive
-                      ? "text-sky-700 bg-sky-50 font-semibold"
-                      : "text-slate-700 hover:text-slate-900 hover:bg-slate-100/80"
+                  `px-3.5 py-2 rounded-lg text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 ${isActive
+                    ? "text-sky-700 bg-sky-50 font-semibold"
+                    : "text-slate-700 hover:text-slate-900 hover:bg-slate-100/80"
                   }`
                 }
               >
@@ -212,10 +211,9 @@ export const Navbar: React.FC = () => {
                   aria-current={location.pathname === item.path ? "page" : undefined}
                   onClick={() => setMobileMenuOpen(false)}
                   className={({ isActive }) =>
-                    `flex items-center justify-between px-4 py-3 rounded-lg text-base font-medium transition-colors ${
-                      isActive
-                        ? "text-sky-700 bg-sky-50 font-semibold border-l-4 border-sky-600"
-                        : "text-slate-800 hover:bg-slate-50"
+                    `flex items-center justify-between px-4 py-3 rounded-lg text-base font-medium transition-colors ${isActive
+                      ? "text-sky-700 bg-sky-50 font-semibold border-l-4 border-sky-600"
+                      : "text-slate-800 hover:bg-slate-50"
                     }`
                   }
                 >

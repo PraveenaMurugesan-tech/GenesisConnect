@@ -73,7 +73,7 @@ GenesisConnect employs a decoupled, production-ready multi-tier architecture:
 ### 2.3 Storage & File Security
 * **Product Images:** Public bucket with MIME validation (`image/jpeg`, `image/png`, `image/webp`) and 5MB size limit.
 * **Datasheets:** Public PDF bucket with magic byte validation and 10MB size limit.
-* **Customer Attachments:** Strictly private bucket (`requirement-documents`). Zero direct public access. Only accessible by authorized administrators via backend signed URLs.
+* **Customer Attachments:** Strictly private bucket (`requirement-documents`). Zero direct public access. Only accessible by authorized administrators via backend .
 
 ### 2.4 Security & Abuse Protection
 * **OWASP Security Headers:** `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin`, `Content-Security-Policy`, and `Permissions-Policy`.

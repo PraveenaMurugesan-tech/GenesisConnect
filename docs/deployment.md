@@ -111,14 +111,16 @@ Create a secure `.env` file in the hosting provider dashboard. Never commit prod
 ### Step 4.1: Provision Database
 1. Provision a PostgreSQL 15+ database instance on Supabase or AWS RDS.
 2. Ensure connection encryption is enforced (`sslmode=require`).
-3. Note the connection URI: `postgresql://[USER]:[PASSWORD]@[HOST]:[PORT]/[DATABASE]?sslmode=require`.
+3. Note the connection URI:
+   - **Direct Connection:** `postgresql://postgres:[PASSWORD]@[HOST]:5432/[DATABASE]?sslmode=require`
+   - **Supabase Connection Pooler (Recommended for cloud deployments):** `postgresql://postgres.[PROJECT-REF]:[PASSWORD]@[POOLER-HOST]:5432/[DATABASE]?sslmode=require` (e.g., using `aws-0-ap-south-1.pooler.supabase.com:5432`)
 
 ### Step 4.2: Execute Alembic Migrations
 Run the ordered Alembic migration chain against the production database:
 
 ```bash
 # In backend/ directory
-export DATABASE_URL="postgresql://postgres:[PASSWORD]@[HOST]:5432/genesisconnect?sslmode=require"
+export DATABASE_URL="postgresql://postgres.[PROJECT-REF]:[PASSWORD]@[POOLER-HOST]:5432/postgres?sslmode=require"
 alembic upgrade head
 ```
 

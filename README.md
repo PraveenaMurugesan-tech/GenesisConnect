@@ -209,8 +209,6 @@ pytest
 ```bash
 cd frontend
 npm run build
-```
-*Expected Result: Clean TypeScript compilation and Vite minification with 0 errors.*
 
 ---
 

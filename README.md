@@ -176,7 +176,7 @@ uvicorn app.main:app --reload --port 8000
 ```
 Interactive API documentation: `http://localhost:8000/docs` (active in development mode).
 
-### 5.3 Frontend Setup
+### 5.3 Frontend  Setup
 ```bash
 cd frontend
 

@@ -56,7 +56,7 @@ app = FastAPI(
     title=settings.PROJECT_NAME,
     description="Official Backend API for Genesis Power Equipments Pvt. Ltd. (GenesisConnect) — Product Catalogue & Customer Management System",
     version="1.0.0",
-    openapi_url=f"{settings.API_V1_STR}/openapi.json" if docs_enabled else None,
+    openapi_url="/openapi.json" if docs_enabled else None,
     docs_url="/docs" if docs_enabled else None,
     redoc_url="/redoc" if docs_enabled else None,
     lifespan=lifespan,
@@ -172,6 +172,13 @@ def api_health():
 
 # Include API v1 Router
 app.include_router(api_router, prefix=settings.API_V1_STR)
+
+# OpenAPI schema under /api/v1 for versioned clients and backwards compatibility
+if docs_enabled:
+    @app.get(f"{settings.API_V1_STR}/openapi.json", include_in_schema=False)
+    def openapi_v1():
+        """Expose OpenAPI specification under /api/v1 for tooling compatibility."""
+        return JSONResponse(content=app.openapi())
 
 
 @app.get("/", tags=["Root"])

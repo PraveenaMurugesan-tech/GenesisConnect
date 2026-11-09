@@ -44,9 +44,12 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         # For API endpoints, frame-ancestors 'none' prevents embedding in iframes
         response.headers["Content-Security-Policy"] = (
             "default-src 'self'; "
-            "img-src 'self' data: https: blob:; "
-            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
-            "font-src 'self' https://fonts.gstatic.com; "
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net; "
+            "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; "
+            "img-src 'self' data: https: blob: https://fastapi.tiangolo.com; "
+            "font-src 'self' https://fonts.gstatic.com data:; "
+            "connect-src 'self' https:; "
+            "worker-src 'self' blob:; "
             "frame-ancestors 'none';"
         )
 

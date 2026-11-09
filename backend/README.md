@@ -184,21 +184,65 @@ Approved Genesis products seeded:
 
 ## 6. Running the Development Server
 
-Start the FastAPI application with live reload:
+### Recommended Startup Command (Windows & Production Compatible)
+
+Run Uvicorn as a module from inside the `backend` directory without auto-reload:
 
 ```bash
-uvicorn app.main:app --reload --port 8000
+python -m uvicorn app.main:app --host 127.0.0.1 --port 8000
 ```
 
-The server will start at: `http://localhost:8000`
+The server will start at: `http://127.0.0.1:8000`
+
+> [!NOTE]
+> **Windows Application Control & Auto-Reload Note**:  
+> On Windows 11 with Smart App Control (SAC) or Windows Defender Application Control (WDAC) enabled, starting Uvicorn with `--reload` spawns file-watcher child processes that can fail with `ImportError: DLL load failed while importing _result_cy: An Application Control policy has blocked this file`.  
+> Starting Uvicorn directly via `python -m uvicorn app.main:app` runs in the primary Python execution context and executes cleanly without triggering policy blocks.
 
 ---
 
 ## 7. Interactive API Documentation
 
-* **Swagger UI (Interactive)**: [http://localhost:8000/docs](http://localhost:8000/docs)
-* **ReDoc (Reference)**: [http://localhost:8000/redoc](http://localhost:8000/redoc)
-* **OpenAPI JSON**: [http://localhost:8000/api/v1/openapi.json](http://localhost:8000/api/v1/openapi.json)
+GenesisConnect provides interactive OpenAPI-compliant documentation:
+
+* **Swagger UI (Interactive API Explorer)**: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
+* **ReDoc (Comprehensive Specification Reference)**: [http://127.0.0.1:8000/redoc](http://127.0.0.1:8000/redoc)
+* **OpenAPI 3.1 JSON Specification**:
+  * Root endpoint: [http://127.0.0.1:8000/openapi.json](http://127.0.0.1:8000/openapi.json)
+  * Versioned endpoint: [http://127.0.0.1:8000/api/v1/openapi.json](http://127.0.0.1:8000/api/v1/openapi.json)
+
+---
+
+## 7.1. Documentation Rendering Diagnosis & Resolution
+
+### Root Cause of Blank Documentation Pages
+1. **Content-Security-Policy (CSP) Blocking Scripts**:  
+   In `app.core.security_headers.SecurityHeadersMiddleware`, the `Content-Security-Policy` header was configured with `default-src 'self'` but lacked an explicit `script-src` directive and lacked `https://cdn.jsdelivr.net` in `style-src`. When browsers loaded `/docs` or `/redoc`:
+   - Scripts from `https://cdn.jsdelivr.net` (`swagger-ui-bundle.js`, `redoc.standalone.js`) fell back to `default-src 'self'` and were rejected by browser security engines.
+   - Inline script tags (such as `SwaggerUIBundle({...})`) were blocked because `'unsafe-inline'` was not permitted for scripts.
+   - Swagger UI stylesheets from `https://cdn.jsdelivr.net` were blocked by `style-src`.
+   - Consequently, the browser rendered empty containers (`<div id="swagger-ui">` and `<redoc>`), appearing as blank white pages despite HTTP 200 responses.
+
+2. **OpenAPI Schema Routing (404 on `/openapi.json`)**:  
+   FastAPI was initialized with `openapi_url=f"{settings.API_V1_STR}/openapi.json"`. While this served OpenAPI at `/api/v1/openapi.json`, direct browser and client navigation to `/openapi.json` returned `HTTP 404 Not Found`.
+
+### Fix Implemented
+1. **`app/core/security_headers.py`**:  
+   Updated CSP to explicitly allow Swagger UI and ReDoc scripts and stylesheets:
+   `script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net;`  
+   `style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com;`  
+   `img-src 'self' data: https: blob: https://fastapi.tiangolo.com;`  
+   `font-src 'self' https://fonts.gstatic.com data:;`  
+   `connect-src 'self' https:;`  
+   `worker-src 'self' blob:;`  
+   `frame-ancestors 'none';`
+
+2. **`app/main.py`**:  
+   - Configured `openapi_url="/openapi.json" if docs_enabled else None` so root `/openapi.json` resolves directly.
+   - Added backwards-compatible `/api/v1/openapi.json` alias endpoint returning `JSONResponse(content=app.openapi())`.
+
+3. **`tests/test_documentation.py`**:  
+   Added automated regression tests covering `/openapi.json`, `/api/v1/openapi.json`, `/docs`, `/redoc`, and CSP header compliance.
 
 ---
 

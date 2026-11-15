@@ -53,6 +53,57 @@ def test_cors_origin_handling(client: TestClient):
     assert res.headers.get("access-control-allow-origin") == allowed_origin
 
 
+def test_cors_preflight_on_contact_messages_and_quote_requests(client: TestClient):
+    """
+    Verifies CORS preflight succeeds on public submission endpoints for actual Vite frontend dev origins
+    such as http://localhost:5174 and http://127.0.0.1:5174.
+    """
+    dev_origins = [
+        "http://localhost:5174",
+        "http://127.0.0.1:5174",
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+    ]
+    endpoints = [
+        "/api/v1/contact-messages",
+        "/api/v1/quote-requests",
+        "/api/v1/custom-requirements",
+    ]
+
+    for origin in dev_origins:
+        for ep in endpoints:
+            res = client.options(
+                ep,
+                headers={
+                    "Origin": origin,
+                    "Access-Control-Request-Method": "POST",
+                    "Access-Control-Request-Headers": "authorization,content-type,accept",
+                },
+            )
+            assert res.status_code == 200, f"Failed for {origin} -> {ep}: {res.status_code}"
+            assert res.headers.get("access-control-allow-origin") == origin
+            assert res.headers.get("access-control-allow-credentials") == "true"
+            allowed_methods = res.headers.get("access-control-allow-methods", "")
+            for m in ["POST", "GET", "OPTIONS", "PATCH", "PUT"]:
+                assert m in allowed_methods, f"Method {m} not in allowed methods: {allowed_methods}"
+
+
+def test_cors_rejects_unauthorized_external_origins(client: TestClient):
+    """
+    Verifies that unauthorized external origins outside local development are rejected with 400 Bad Request.
+    """
+    res = client.options(
+        "/api/v1/contact-messages",
+        headers={
+            "Origin": "http://malicious-external-attacker.com",
+            "Access-Control-Request-Method": "POST",
+            "Access-Control-Request-Headers": "content-type",
+        },
+    )
+    assert res.status_code == 400
+    assert "Disallowed CORS origin" in res.text
+
+
 def test_swagger_disabled_in_production():
     """Verify that when running in production without explicit ENABLE_DOCS, docs are hidden."""
     from fastapi import FastAPI

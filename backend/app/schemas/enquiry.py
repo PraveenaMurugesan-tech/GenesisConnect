@@ -1,6 +1,6 @@
 from datetime import datetime
-from typing import Optional
-from pydantic import BaseModel, EmailStr, ConfigDict, Field, field_validator
+from typing import Optional, Any
+from pydantic import BaseModel, EmailStr, ConfigDict, Field, field_validator, model_validator
 from app.models.enquiry import QuoteStatus, RequirementStatus, ContactStatus
 from app.schemas.product import ProductResponse
 from app.core.sanitizer import sanitize_input_text
@@ -97,12 +97,23 @@ class CustomRequirementResponse(CustomRequirementBase):
 class ContactMessageBase(BaseModel):
     name: str = Field(..., min_length=2, max_length=255, description="Sender name")
     company_name: Optional[str] = Field(None, max_length=255, description="Organization or company name")
+    company: Optional[str] = Field(None, max_length=255, description="Organization or company name alias")
     email: EmailStr = Field(..., description="Sender contact email")
     phone: Optional[str] = Field(None, max_length=50, description="Sender telephone or mobile")
     subject: Optional[str] = Field(None, max_length=255, description="Message subject line")
     message: str = Field(..., min_length=3, description="Message body content")
 
-    @field_validator("name", "company_name", "subject", "message", mode="before")
+    @model_validator(mode="before")
+    @classmethod
+    def harmonize_company_fields(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            company_val = data.get("company_name") or data.get("company")
+            if company_val:
+                data["company_name"] = company_val
+                data["company"] = company_val
+        return data
+
+    @field_validator("name", "company_name", "company", "phone", "subject", "message", mode="before")
     @classmethod
     def sanitize_contact_fields(cls, v: Optional[str]) -> Optional[str]:
         return sanitize_input_text(v)

@@ -167,6 +167,7 @@ export interface ContactMessage {
   id: number;
   name: string;
   company_name?: string;
+  company?: string;
   email: string;
   phone?: string;
   subject?: string;

@@ -12,6 +12,8 @@ import {
   ChevronRight,
   Building2,
   HelpCircle,
+  AlertCircle,
+  X,
 } from "lucide-react";
 import { Container } from "../components/common/Container";
 import { SectionHeader } from "../components/common/SectionHeader";
@@ -26,7 +28,7 @@ import { ContactInfo } from "../types";
 
 interface ContactFormState {
   name: string;
-  companyName: string;
+  company: string;
   email: string;
   phone: string;
   subject: string;
@@ -35,16 +37,26 @@ interface ContactFormState {
 
 interface ContactFormErrors {
   name?: string;
+  company?: string;
   email?: string;
   phone?: string;
   subject?: string;
   message?: string;
 }
 
+interface SubmittedContactData {
+  name: string;
+  company?: string;
+  email: string;
+  phone?: string;
+  subject: string;
+  referenceId: string;
+}
+
 export const ContactPage: React.FC = () => {
   const [formData, setFormData] = useState<ContactFormState>({
     name: "",
-    companyName: "",
+    company: "",
     email: "",
     phone: "",
     subject: "",
@@ -54,7 +66,7 @@ export const ContactPage: React.FC = () => {
   const [errors, setErrors] = useState<ContactFormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  const [messageReference, setMessageReference] = useState("");
+  const [submittedData, setSubmittedData] = useState<SubmittedContactData | null>(null);
   const [serverError, setServerError] = useState<string | null>(null);
   const [liveContact, setLiveContact] = useState<ContactInfo | null>(null);
 
@@ -90,28 +102,42 @@ export const ContactPage: React.FC = () => {
   const validate = (): boolean => {
     const newErrors: ContactFormErrors = {};
 
+    // 1. Name validation
     if (!formData.name.trim()) {
       newErrors.name = "Your name is required.";
+    } else if (formData.name.trim().length < 2) {
+      newErrors.name = "Name must be at least 2 characters.";
     }
 
+    // 2. Email validation
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     if (!formData.email.trim()) {
       newErrors.email = "Email address is required.";
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
-      newErrors.email = "Please enter a valid email address.";
+    } else if (!emailRegex.test(formData.email.trim())) {
+      newErrors.email = "Please enter a valid email address (e.g. name@company.com).";
     }
 
-    if (!formData.phone.trim()) {
-      newErrors.phone = "Telephone or mobile number is required.";
-    } else if (formData.phone.trim().length < 8) {
-      newErrors.phone = "Please enter a valid phone number (minimum 8 digits).";
+    // 3. Phone validation
+    const phoneTrimmed = formData.phone.trim();
+    const phoneDigits = phoneTrimmed.replace(/\D/g, "");
+    if (!phoneTrimmed) {
+      newErrors.phone = "Phone or mobile number is required.";
+    } else if (!/^[\d\s\+\-\(\)\.]{7,25}$/.test(phoneTrimmed) || phoneDigits.length < 8) {
+      newErrors.phone = "Please enter a valid telephone or mobile number (minimum 8 digits).";
     }
 
+    // 4. Subject validation
     if (!formData.subject.trim()) {
       newErrors.subject = "Message subject is required.";
+    } else if (formData.subject.trim().length < 2) {
+      newErrors.subject = "Subject must be at least 2 characters.";
     }
 
+    // 5. Message validation
     if (!formData.message.trim()) {
       newErrors.message = "Message text is required.";
+    } else if (formData.message.trim().length < 5) {
+      newErrors.message = "Please provide more details in your message (minimum 5 characters).";
     }
 
     setErrors(newErrors);
@@ -130,21 +156,70 @@ export const ContactPage: React.FC = () => {
     try {
       const res = await submitContactMessage({
         name: formData.name.trim(),
-        company_name: formData.companyName.trim() || undefined,
+        company: formData.company.trim() || undefined,
+        company_name: formData.company.trim() || undefined,
         email: formData.email.trim(),
         phone: formData.phone.trim() || undefined,
-        subject: formData.subject.trim() || undefined,
+        subject: formData.subject.trim(),
         message: formData.message.trim(),
       });
 
       const refId = `GEN-MSG-${String(res.id).padStart(5, "0")}`;
-      setMessageReference(refId);
+      setSubmittedData({
+        name: formData.name.trim(),
+        company: formData.company.trim() || undefined,
+        email: formData.email.trim(),
+        phone: formData.phone.trim(),
+        subject: formData.subject.trim(),
+        referenceId: refId,
+      });
+
+      // Clear the form fields upon successful HTTP 201 creation
+      setFormData({
+        name: "",
+        company: "",
+        email: "",
+        phone: "",
+        subject: "",
+        message: "",
+      });
+      setErrors({});
       setSubmitted(true);
     } catch (err: any) {
-      const msg =
-        err.response?.data?.detail ||
-        "Unable to send your message at this time. Please check your network connection and try again.";
-      setServerError(typeof msg === "string" ? msg : JSON.stringify(msg));
+      console.error("Failed to submit contact message:", err);
+      let errorMsg = "Unable to transmit your message at this time. Please check your network connection and try again.";
+
+      if (err.response?.data?.detail) {
+        const detail = err.response.data.detail;
+        if (typeof detail === "string") {
+          errorMsg = detail;
+        } else if (Array.isArray(detail)) {
+          // Parse Pydantic validation error objects
+          const fieldErrors: ContactFormErrors = {};
+          const messages: string[] = [];
+
+          detail.forEach((item: any) => {
+            const field = item.loc?.[item.loc.length - 1];
+            const msg = item.msg || "Invalid value";
+            if (field && ["name", "company", "company_name", "email", "phone", "subject", "message"].includes(field)) {
+              const mappedField = field === "company_name" ? "company" : field;
+              fieldErrors[mappedField as keyof ContactFormErrors] = msg;
+            }
+            messages.push(`${field ? field + ": " : ""}${msg}`);
+          });
+
+          if (Object.keys(fieldErrors).length > 0) {
+            setErrors((prev) => ({ ...prev, ...fieldErrors }));
+          }
+          errorMsg = messages.join(" | ");
+        } else if (typeof detail === "object") {
+          errorMsg = JSON.stringify(detail);
+        }
+      } else if (err.message) {
+        errorMsg = err.message;
+      }
+
+      setServerError(errorMsg);
     } finally {
       setIsSubmitting(false);
     }
@@ -153,7 +228,7 @@ export const ContactPage: React.FC = () => {
   const handleReset = () => {
     setFormData({
       name: "",
-      companyName: "",
+      company: "",
       email: "",
       phone: "",
       subject: "",
@@ -161,7 +236,7 @@ export const ContactPage: React.FC = () => {
     });
     setErrors({});
     setSubmitted(false);
-    setMessageReference("");
+    setSubmittedData(null);
     setServerError(null);
   };
 
@@ -197,17 +272,20 @@ export const ContactPage: React.FC = () => {
             role="alert"
             className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center justify-between mb-6 shadow-xs"
           >
-            <span>{serverError}</span>
+            <div className="flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 text-rose-600 flex-shrink-0" />
+              <span>{serverError}</span>
+            </div>
             <button
               type="button"
               onClick={() => setServerError(null)}
-              className="text-rose-600 hover:text-rose-800 font-bold ml-4"
+              className="text-rose-600 hover:text-rose-800 p-1"
+              aria-label="Dismiss error notification"
             >
-              Dismiss
+              <X className="w-4 h-4" />
             </button>
           </div>
         )}
-
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
           {/* Left Column: Corporate Directory Cards */}
@@ -328,7 +406,7 @@ export const ContactPage: React.FC = () => {
 
           {/* Right Column: Contact Message Form */}
           <div className="lg:col-span-7">
-            {submitted ? (
+            {submitted && submittedData ? (
               <div className="bg-white rounded-2xl border border-slate-200 p-8 sm:p-12 text-center shadow-industrial space-y-6">
                 <div className="w-16 h-16 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600 mx-auto">
                   <CheckCircle2 className="w-8 h-8" />
@@ -346,19 +424,25 @@ export const ContactPage: React.FC = () => {
                 <div className="p-5 rounded-xl bg-slate-50 border border-slate-200 max-w-md mx-auto text-left space-y-2.5 text-xs text-slate-700">
                   <div className="flex justify-between border-b border-slate-200 pb-2">
                     <span className="text-slate-500">Inquiry ID:</span>
-                    <span className="font-mono font-bold text-slate-900">{messageReference}</span>
+                    <span className="font-mono font-bold text-slate-900">{submittedData.referenceId}</span>
                   </div>
                   <div className="flex justify-between border-b border-slate-200 pb-2">
                     <span className="text-slate-500">Sender Name:</span>
-                    <span className="font-semibold text-slate-800">{formData.name}</span>
+                    <span className="font-semibold text-slate-800">{submittedData.name}</span>
                   </div>
+                  {submittedData.company && (
+                    <div className="flex justify-between border-b border-slate-200 pb-2">
+                      <span className="text-slate-500">Company:</span>
+                      <span className="font-medium text-slate-800">{submittedData.company}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between border-b border-slate-200 pb-2">
                     <span className="text-slate-500">Subject:</span>
-                    <span className="font-medium text-slate-800">{formData.subject}</span>
+                    <span className="font-medium text-slate-800">{submittedData.subject}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-slate-500">Email:</span>
-                    <span className="font-mono text-slate-800">{formData.email}</span>
+                    <span className="font-mono text-slate-800">{submittedData.email}</span>
                   </div>
                 </div>
 
@@ -390,71 +474,104 @@ export const ContactPage: React.FC = () => {
                       </p>
                     </div>
 
+                    {serverError && (
+                      <div
+                        role="alert"
+                        className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center justify-between shadow-xs"
+                      >
+                        <div className="flex items-center gap-2">
+                          <AlertCircle className="w-4 h-4 text-rose-600 flex-shrink-0" />
+                          <span>{serverError}</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setServerError(null)}
+                          className="text-rose-600 hover:text-rose-800 p-1"
+                          aria-label="Dismiss error"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    )}
+
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                       <Input
-                        label="Your Name *"
+                        label="Your Name"
                         name="name"
+                        id="contact-name"
                         value={formData.name}
                         onChange={handleChange}
                         placeholder="e.g. Ramesh Kumar"
                         error={errors.name}
                         required
+                        disabled={isSubmitting}
                       />
 
                       <Input
                         label="Company / Facility Name"
-                        name="companyName"
-                        value={formData.companyName}
+                        name="company"
+                        id="contact-company"
+                        value={formData.company}
                         onChange={handleChange}
                         placeholder="e.g. Precision Industries"
+                        error={errors.company}
+                        disabled={isSubmitting}
                       />
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                       <Input
-                        label="Email Address *"
+                        label="Email Address"
                         type="email"
                         name="email"
+                        id="contact-email"
                         value={formData.email}
                         onChange={handleChange}
                         placeholder="ramesh@company.com"
                         leftIcon={<Mail className="w-4 h-4 text-slate-400" />}
                         error={errors.email}
                         required
+                        disabled={isSubmitting}
                       />
 
                       <Input
-                        label="Phone / Mobile Number *"
+                        label="Phone / Mobile Number"
                         type="tel"
                         name="phone"
+                        id="contact-phone"
                         value={formData.phone}
                         onChange={handleChange}
                         placeholder="+91 98400 00000"
                         leftIcon={<Phone className="w-4 h-4 text-slate-400" />}
                         error={errors.phone}
                         required
+                        disabled={isSubmitting}
                       />
                     </div>
 
                     <Input
-                      label="Inquiry Subject *"
+                      label="Inquiry Subject"
                       name="subject"
+                      id="contact-subject"
                       value={formData.subject}
                       onChange={handleChange}
                       placeholder="e.g. Inquiry regarding Industrial UPS maintenance / IGBT stabilizer"
                       error={errors.subject}
                       required
+                      disabled={isSubmitting}
                     />
 
                     <Textarea
-                      label="Your Message *"
+                      label="Your Message"
                       name="message"
+                      id="contact-message"
                       value={formData.message}
                       onChange={handleChange}
                       rows={5}
                       placeholder="Please describe your equipment inquiry, site location, or service requirement..."
                       error={errors.message}
                       required
+                      disabled={isSubmitting}
                     />
 
                     <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-slate-100">
@@ -468,10 +585,11 @@ export const ContactPage: React.FC = () => {
                         variant="primary"
                         size="lg"
                         isLoading={isSubmitting}
+                        disabled={isSubmitting}
                         leftIcon={<Send className="w-4 h-4" />}
                         className="w-full sm:w-auto font-semibold shadow-md"
                       >
-                        Transmit Message
+                        {isSubmitting ? "Transmitting Message..." : "Transmit Message"}
                       </Button>
                     </div>
                   </form>

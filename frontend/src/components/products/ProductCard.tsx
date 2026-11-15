@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { ChevronRight, Zap, Shield, Cpu, Activity, Sparkles } from "lucide-react";
 import { Product } from "../../types";
+import { getProductImage } from "../../data/products";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "../ui/Card";
 import { Badge } from "../common/Badge";
 import { Button } from "../ui/Button";
@@ -25,18 +26,18 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, featured = fa
       slug.includes("ultrasound") ||
       category.includes("medical")
     ) {
-      return <Activity className="w-8 h-8 text-sky-600" aria-hidden="true" />;
+      return <Activity className="w-8 h-8 text-sky-500" aria-hidden="true" />;
     }
     if (slug.includes("stabilizer") || category.includes("stabilizer")) {
-      return <Cpu className="w-8 h-8 text-amber-600" aria-hidden="true" />;
+      return <Cpu className="w-8 h-8 text-amber-500" aria-hidden="true" />;
     }
     if (slug.includes("cvcf") || slug.includes("custom") || category.includes("power conditioning")) {
-      return <Sparkles className="w-8 h-8 text-indigo-600" aria-hidden="true" />;
+      return <Sparkles className="w-8 h-8 text-indigo-400" aria-hidden="true" />;
     }
-    return <Zap className="w-8 h-8 text-amber-500" aria-hidden="true" />;
+    return <Zap className="w-8 h-8 text-amber-400" aria-hidden="true" />;
   };
 
-  const primaryImage = product.image || (product.images && product.images.length > 0 ? product.images[0] : undefined);
+  const primaryImage = getProductImage(product);
   const showImage = Boolean(primaryImage && !imageError);
 
   const displayShortDescription =
@@ -45,52 +46,90 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, featured = fa
   const highlights = product.keyHighlights || product.key_highlights || (product.features ? product.features.slice(0, 3) : []);
 
   return (
-    <Card hover className="flex flex-col justify-between h-full group border-slate-200/90 transition-all duration-200">
+    <Card hover className="flex flex-col justify-between h-full group border-slate-200/90 transition-all duration-200 overflow-hidden">
       <div>
         {/* Technical Product Header Visual */}
-        <div className="relative h-44 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-t-xl p-5 flex flex-col justify-between overflow-hidden border-b border-slate-800">
-          {/* Subtle industrial grid */}
-          <div
-            className="absolute inset-0 opacity-10 bg-[radial-gradient(#38bdf8_1px,transparent_1px)] [background-size:16px_16px] pointer-events-none"
-            aria-hidden="true"
-          />
-
-          {showImage && (
-            <img
-              src={primaryImage}
-              alt={product.name}
-              onError={() => setImageError(true)}
-              className="absolute inset-0 w-full h-full object-cover opacity-25 group-hover:scale-105 transition-transform duration-300"
+        {showImage ? (
+          <div className="relative h-48 bg-slate-950 rounded-t-xl overflow-hidden border-b border-slate-800 flex items-center justify-center">
+            {/* Subtle industrial grid backdrop */}
+            <div
+              className="absolute inset-0 opacity-10 bg-[radial-gradient(#38bdf8_1px,transparent_1px)] [background-size:16px_16px] pointer-events-none"
+              aria-hidden="true"
             />
-          )}
 
-          <div className="flex items-center justify-between relative z-10">
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-semibold bg-slate-800/90 text-slate-200 border border-slate-700/80">
-              <Shield className="w-3 h-3 text-amber-400" />
-              {product.category}
-            </span>
-
-            {featured && (
-              <Badge variant="accent" size="sm" className="font-semibold">
-                Featured
-              </Badge>
-            )}
-          </div>
-
-          <div className="flex items-end justify-between relative z-10">
-            <div className="w-14 h-14 rounded-xl bg-slate-800/90 border border-slate-700 flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform duration-200">
-              {getProductIcon()}
+            {/* Product Photography - Aspect Ratio Preserved */}
+            <div className="w-full h-full flex items-center justify-center p-3 relative z-0">
+              <img
+                src={primaryImage}
+                alt={`${product.name} — Genesis Industrial Power Equipment`}
+                onError={() => setImageError(true)}
+                className="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-300 drop-shadow-md"
+              />
             </div>
-            <div className="text-right">
-              <span className="text-[10px] uppercase font-mono tracking-wider text-slate-400 block font-medium">
-                Genesis Line
+
+            {/* Gradient Overlays for High Badge Contrast */}
+            <div className="absolute inset-x-0 top-0 h-14 bg-gradient-to-b from-slate-950/85 to-transparent pointer-events-none z-10" />
+            <div className="absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-slate-950/85 to-transparent pointer-events-none z-10" />
+
+            {/* Top Badge Bar */}
+            <div className="absolute top-3 inset-x-3 flex items-center justify-between z-20 pointer-events-none">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-semibold bg-slate-900/90 backdrop-blur-sm text-slate-200 border border-slate-700/80 shadow pointer-events-auto">
+                <Shield className="w-3 h-3 text-amber-400" />
+                {product.category}
               </span>
-              <span className="text-xs font-mono font-semibold text-amber-400">
-                {product.slug.split("-")[0].toUpperCase()}
+
+              {featured && (
+                <Badge variant="accent" size="sm" className="font-semibold shadow pointer-events-auto">
+                  Featured
+                </Badge>
+              )}
+            </div>
+
+            {/* Bottom Reference Pill */}
+            <div className="absolute bottom-2 right-3 z-20 pointer-events-none">
+              <span className="inline-flex items-center gap-1.5 text-[10px] font-mono px-2 py-0.5 rounded bg-slate-900/90 backdrop-blur-sm text-slate-300 border border-slate-700/80 shadow pointer-events-auto">
+                <span className="text-slate-400 uppercase">Genesis</span>
+                <span className="text-amber-400 font-semibold">{product.slug.split("-")[0].toUpperCase()}</span>
               </span>
             </div>
           </div>
-        </div>
+        ) : (
+          /* Neutral Technical Placeholder (Cath Lab UPS, Custom Systems, or Image Fallback) */
+          <div className="relative h-48 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-t-xl p-5 flex flex-col justify-between overflow-hidden border-b border-slate-800">
+            {/* Subtle industrial grid */}
+            <div
+              className="absolute inset-0 opacity-15 bg-[radial-gradient(#38bdf8_1px,transparent_1px)] [background-size:16px_16px] pointer-events-none"
+              aria-hidden="true"
+            />
+
+            <div className="flex items-center justify-between relative z-10">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-semibold bg-slate-800/90 text-slate-200 border border-slate-700/80">
+                <Shield className="w-3 h-3 text-amber-400" />
+                {product.category}
+              </span>
+
+              {featured && (
+                <Badge variant="accent" size="sm" className="font-semibold">
+                  Featured
+                </Badge>
+              )}
+            </div>
+
+            <div className="flex items-end justify-between relative z-10">
+              <div className="w-14 h-14 rounded-xl bg-slate-800/90 border border-slate-700 flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform duration-200">
+                {getProductIcon()}
+              </div>
+              <div className="text-right">
+                <span className="text-[10px] uppercase font-mono tracking-wider text-slate-400 block font-medium">
+                  Genesis Line
+                </span>
+                <span className="text-xs font-mono font-semibold text-amber-400">
+                  {product.slug.split("-")[0].toUpperCase()}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Card Body */}
         <CardHeader className="pt-5 pb-3">

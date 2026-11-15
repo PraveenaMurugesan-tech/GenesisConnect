@@ -25,6 +25,7 @@ def submit_contact_message(
     Assigns initial status to UNREAD.
     """
     message_data = message_in.model_dump()
+    message_data.pop("company", None)
     message_data["status"] = ContactStatus.UNREAD
 
     contact = ContactMessage(**message_data)

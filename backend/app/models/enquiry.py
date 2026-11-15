@@ -137,6 +137,10 @@ class ContactMessage(Base):
         nullable=False,
     )
 
+    @property
+    def company(self) -> Optional[str]:
+        return self.company_name
+
     def __repr__(self) -> str:
         return f"<ContactMessage id={self.id} name='{self.name}' status='{self.status}'>"
 

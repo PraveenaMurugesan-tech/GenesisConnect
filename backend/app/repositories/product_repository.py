@@ -4,10 +4,23 @@
 # ==============================================================================
 
 from typing import List, Optional, Union
-from sqlalchemy import or_, func, select
+from sqlalchemy import or_, and_, func, select
 from sqlalchemy.orm import Session
 from app.models.product import Product
 from app.schemas.product import ProductCreate, ProductUpdate
+
+# Mapping of genuine company product categories to their respective canonical slugs
+COMPANY_CATEGORY_SLUG_MAP = {
+    "industrial online ups": "industrial-ups",
+    "medical and ct scanner ups": "ct-scanner-ups",
+    "medical & ct scanner ups": "ct-scanner-ups",
+    "igbt static voltage stabilizers": "igbt-static-voltage-stabilizers",
+    "servo voltage stabilizers": "servo-stabilizers",
+    "cvcf frequency converters": "cvcf-systems",
+    "cath lab ups": "cath-laboratory-ups",
+    "cath laboratory ups": "cath-laboratory-ups",
+    "other power conditioning equipment": "custom-specialized-power-systems",
+}
 
 
 class ProductRepository:
@@ -45,19 +58,47 @@ class ProductRepository:
             query = query.filter(Product.is_active == False)
 
         if category and category.strip() and category.strip().lower() not in ["all", "all categories"]:
-            query = query.filter(Product.category.ilike(f"%{category.strip()}%"))
+            cat_clean = category.strip()
+            cat_lower = cat_clean.lower()
+            if cat_lower in COMPANY_CATEGORY_SLUG_MAP:
+                target_slug = COMPANY_CATEGORY_SLUG_MAP[cat_lower]
+                query = query.filter(
+                    or_(
+                        Product.slug == target_slug,
+                        Product.category.ilike(f"%{cat_clean}%"),
+                    )
+                )
+            else:
+                query = query.filter(Product.category.ilike(f"%{cat_clean}%"))
 
         if search and search.strip():
-            term = f"%{search.strip()}%"
-            query = query.filter(
-                or_(
-                    Product.name.ilike(term),
-                    Product.description.ilike(term),
-                    Product.short_description.ilike(term),
-                    Product.tagline.ilike(term),
-                    Product.slug.ilike(term),
-                )
-            )
+            raw_search = search.strip()
+            term = f"%{raw_search}%"
+            search_words = [w for w in raw_search.split() if len(w) > 1]
+            conditions = [
+                Product.name.ilike(term),
+                Product.description.ilike(term),
+                Product.short_description.ilike(term),
+                Product.tagline.ilike(term),
+                Product.category.ilike(term),
+                Product.slug.ilike(term),
+            ]
+            if len(search_words) > 1:
+                word_matches = []
+                for word in search_words:
+                    w_term = f"%{word}%"
+                    word_matches.append(
+                        or_(
+                            Product.name.ilike(w_term),
+                            Product.description.ilike(w_term),
+                            Product.short_description.ilike(w_term),
+                            Product.tagline.ilike(w_term),
+                            Product.category.ilike(w_term),
+                            Product.slug.ilike(w_term),
+                        )
+                    )
+                conditions.append(and_(*word_matches))
+            query = query.filter(or_(*conditions))
 
         return query.order_by(Product.id.asc()).offset(skip).limit(limit).all()
 
@@ -76,19 +117,47 @@ class ProductRepository:
             query = query.filter(Product.is_active == False)
 
         if category and category.strip() and category.strip().lower() not in ["all", "all categories"]:
-            query = query.filter(Product.category.ilike(f"%{category.strip()}%"))
+            cat_clean = category.strip()
+            cat_lower = cat_clean.lower()
+            if cat_lower in COMPANY_CATEGORY_SLUG_MAP:
+                target_slug = COMPANY_CATEGORY_SLUG_MAP[cat_lower]
+                query = query.filter(
+                    or_(
+                        Product.slug == target_slug,
+                        Product.category.ilike(f"%{cat_clean}%"),
+                    )
+                )
+            else:
+                query = query.filter(Product.category.ilike(f"%{cat_clean}%"))
 
         if search and search.strip():
-            term = f"%{search.strip()}%"
-            query = query.filter(
-                or_(
-                    Product.name.ilike(term),
-                    Product.description.ilike(term),
-                    Product.short_description.ilike(term),
-                    Product.tagline.ilike(term),
-                    Product.slug.ilike(term),
-                )
-            )
+            raw_search = search.strip()
+            term = f"%{raw_search}%"
+            search_words = [w for w in raw_search.split() if len(w) > 1]
+            conditions = [
+                Product.name.ilike(term),
+                Product.description.ilike(term),
+                Product.short_description.ilike(term),
+                Product.tagline.ilike(term),
+                Product.category.ilike(term),
+                Product.slug.ilike(term),
+            ]
+            if len(search_words) > 1:
+                word_matches = []
+                for word in search_words:
+                    w_term = f"%{word}%"
+                    word_matches.append(
+                        or_(
+                            Product.name.ilike(w_term),
+                            Product.description.ilike(w_term),
+                            Product.short_description.ilike(w_term),
+                            Product.tagline.ilike(w_term),
+                            Product.category.ilike(w_term),
+                            Product.slug.ilike(w_term),
+                        )
+                    )
+                conditions.append(and_(*word_matches))
+            query = query.filter(or_(*conditions))
 
         return query.scalar() or 0
 

@@ -68,6 +68,24 @@ app = FastAPI(
 from app.core.security_headers import SecurityHeadersMiddleware
 from app.core.rate_limiter import AbuseProtectionMiddleware
 
+# Standard local development origins for Vite, React, Preview and local dev tools
+DEV_DEFAULT_ORIGINS = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:5174",
+    "http://127.0.0.1:5174",
+    "http://localhost:5175",
+    "http://127.0.0.1:5175",
+    "http://localhost:4173",
+    "http://127.0.0.1:4173",
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
+    "http://localhost:8080",
+    "http://127.0.0.1:8080",
+]
+
 allowed_origins: List[str] = []
 if isinstance(settings.CORS_ORIGINS, list):
     allowed_origins.extend([str(o).rstrip("/") for o in settings.CORS_ORIGINS if o])
@@ -79,30 +97,52 @@ if settings.FRONTEND_URL:
     if clean_frontend not in allowed_origins:
         allowed_origins.append(clean_frontend)
 
+# In development and test environments, guarantee all standard dev origins are present
+# so that environment variables or restrictive .env configs do not override local testing
+if settings.ENVIRONMENT not in ("production", "prod"):
+    for dev_orig in DEV_DEFAULT_ORIGINS:
+        if dev_orig not in allowed_origins:
+            allowed_origins.append(dev_orig)
+
 # Ensure no empty origin is passed and remove wildcard in production
 allowed_origins = list(set([o for o in allowed_origins if o]))
 if settings.ENVIRONMENT in ("production", "prod") and "*" in allowed_origins:
     logger.warning("Unrestricted wildcard '*' origin detected in production. Removing wildcard for CORS security.")
     allowed_origins.remove("*")
 
-# Register Security Headers Middleware (outermost for all responses)
+# Use regex pattern in development to allow all local development ports on localhost and 127.0.0.1
+# while strictly adhering to CORS specification (no wildcard origin with credentials)
+allow_origin_regex = (
+    r"^https?://(localhost|127\.0\.0\.1)(:\d+)?$"
+    if settings.ENVIRONMENT not in ("production", "prod")
+    else None
+)
+
+# Register Security Headers Middleware
 app.add_middleware(SecurityHeadersMiddleware)
 
 # Register Abuse Protection Rate Limiter Middleware
 app.add_middleware(AbuseProtectionMiddleware)
 
-# Register Hardened CORS Middleware
+# Register Hardened CORS Middleware (outermost user middleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,
+    allow_origin_regex=allow_origin_regex,
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"],
     allow_headers=[
-        "Content-Type",
         "Authorization",
+        "Content-Type",
         "Accept",
         "Origin",
         "X-Requested-With",
+        "Access-Control-Request-Method",
+        "Access-Control-Request-Headers",
+        "Cache-Control",
+        "Pragma",
+        "Range",
+        "*",
     ],
 )
 

@@ -13,6 +13,7 @@ from app.services.storage.exceptions import (
 from app.services.storage.validation import (
     validate_upload,
     sanitize_filename,
+    normalize_document_filename,
     verify_magic_bytes,
 )
 from app.services.storage.providers import (
@@ -34,6 +35,7 @@ __all__ = [
     "StorageProviderError",
     "validate_upload",
     "sanitize_filename",
+    "normalize_document_filename",
     "verify_magic_bytes",
     "BaseStorageProvider",
     "SupabaseStorageProvider",

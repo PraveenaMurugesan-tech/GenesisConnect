@@ -50,6 +50,25 @@ def sanitize_filename(filename: str) -> str:
     return clean or "unnamed_file"
 
 
+def normalize_document_filename(filename: str) -> str:
+    """
+    Normalizes a document filename:
+    - Collapses redundant duplicate extensions (e.g. .pdf.pdf, .PDF.pdf) to a single .pdf.
+    - Normalizes uppercase or mixed-case extensions (.PDF) to lowercase .pdf.
+    - Preserves filenames without extensions so they are evaluated by extension validation rules.
+    """
+    if not filename:
+        return "requirement.pdf"
+
+    if re.search(r"\.pdf$", filename, re.IGNORECASE):
+        base = re.sub(r"(?:\.+pdf)+$", "", filename, flags=re.IGNORECASE).rstrip(".")
+        if base:
+            return f"{base}.pdf"
+        return "requirement.pdf"
+
+    return filename
+
+
 def verify_magic_bytes(file_bytes: bytes, extension: str) -> bool:
     """
     Validates file content using magic byte signatures rather than relying solely on extension.
@@ -103,6 +122,11 @@ def validate_upload(
         raise FileValidationError("Uploaded file is empty (0 bytes).")
 
     sanitized_name = sanitize_filename(original_filename)
+
+    # Normalize PDF document extensions (e.g. .pdf.pdf -> .pdf, .PDF -> .pdf)
+    if upload_type in ("enquiry_document", "product_datasheet"):
+        sanitized_name = normalize_document_filename(sanitized_name)
+
     _, ext = os.path.splitext(sanitized_name)
     ext = ext.lower()
 

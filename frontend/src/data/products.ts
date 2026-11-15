@@ -28,6 +28,59 @@ export const PRODUCT_CATEGORIES: ProductCategory[] = [
 ];
 
 /**
+ * Official verified product images located in frontend/public/images/products/
+ * Only products with verified real photography are mapped.
+ * Cath Laboratory UPS and Custom Specialized Power Systems lack dedicated illustrations
+ * and strictly resolve to undefined (neutral placeholder).
+ */
+export const PRODUCT_IMAGE_MAP: Record<string, string> = {
+  "ups-for-small-office": "/images/products/small_ups.jpg",
+  "industrial-ups": "/images/products/industrialups.jpeg",
+  "ct-scanner-ups": "/images/products/ct_scanner.jpg",
+  "emi-filter-ultrasound": "/images/products/emi_filter.jpg",
+  "igbt-static-voltage-stabilizers": "/images/products/igbt.jpg",
+  "servo-stabilizers": "/images/products/servo.jpg",
+  "cvcf-systems": "/images/products/cvcf.jpg",
+};
+
+/**
+ * Resolves the displayable image for any product safely.
+ * Returns undefined for products without dedicated illustrations to render neutral placeholders.
+ */
+export const getProductImage = (product: {
+  slug?: string;
+  image?: string | null;
+  images?: string[] | null;
+}): string | undefined => {
+  if (!product || !product.slug) return undefined;
+  const slug = product.slug.toLowerCase().trim();
+
+  // Explicitly neutral placeholder products
+  if (
+    slug === "cath-laboratory-ups" ||
+    slug === "custom-specialized-power-systems"
+  ) {
+    return undefined;
+  }
+
+  // If a valid non-svg image path is provided on the object, use it
+  if (product.image && !product.image.endsWith(".svg")) {
+    return product.image;
+  }
+  if (
+    product.images &&
+    product.images.length > 0 &&
+    product.images[0] &&
+    !product.images[0].endsWith(".svg")
+  ) {
+    return product.images[0];
+  }
+
+  // Fallback to verified image map
+  return PRODUCT_IMAGE_MAP[slug];
+};
+
+/**
  * Master Genesis Product Catalogue
  * Note: Specifications strictly follow client-provided data.
  * Unavailable technical parameters are explicitly marked "Not provided".
@@ -70,13 +123,13 @@ export const PRODUCTS: CatalogueProduct[] = [
       "Critical point-of-sale (POS) systems",
       "Precision lab equipment and monitoring stations",
     ],
-    image: "/images/products/ups-small-office.svg",
-    images: ["/images/products/ups-small-office.svg"],
+    image: "/images/products/small_ups.jpg",
+    images: ["/images/products/small_ups.jpg"],
     datasheet: undefined,
     isActive: true,
     // Backward compatibility aliases
     short_description: "High-efficiency online double-conversion UPS engineered for small offices, workstations, branch networking racks, and point-of-sale systems.",
-    image_url: "/images/products/ups-small-office.svg",
+    image_url: "/images/products/small_ups.jpg",
     datasheet_url: undefined,
     is_active: true,
     key_highlights: [
@@ -171,12 +224,12 @@ export const PRODUCTS: CatalogueProduct[] = [
       "Emergency trauma care units",
       "Multi-slice diagnostic CT installations",
     ],
-    image: "/images/products/ctscanner.jpeg",
-    images: ["/images/products/ctscanner.jpeg"],
+    image: "/images/products/ct_scanner.jpg",
+    images: ["/images/products/ct_scanner.jpg"],
     datasheet: undefined,
     isActive: true,
     short_description: "Specialized high-capacity medical imaging UPS engineered to absorb severe momentary pulsed loads and deliver uninterrupted power to CT scan systems.",
-    image_url: "/images/products/ctscanner.jpeg",
+    image_url: "/images/products/ct_scanner.jpg",
     datasheet_url: undefined,
     is_active: true,
     key_highlights: [
@@ -219,12 +272,12 @@ export const PRODUCTS: CatalogueProduct[] = [
       "Radiology & vascular doppler imaging rooms",
       "Point-of-care mobile ultrasound carts",
     ],
-    image: "/images/products/emi-filter-ultrasound.svg",
-    images: ["/images/products/emi-filter-ultrasound.svg"],
+    image: "/images/products/emi_filter.jpg",
+    images: ["/images/products/emi_filter.jpg"],
     datasheet: undefined,
     isActive: true,
     short_description: "Specialized medical grade electromagnetic interference (EMI/RFI) filter designed to eliminate high-frequency mains noise and distortion from ultrasound imaging.",
-    image_url: "/images/products/emi-filter-ultrasound.svg",
+    image_url: "/images/products/emi_filter.jpg",
     datasheet_url: undefined,
     is_active: true,
     key_highlights: [
@@ -269,12 +322,12 @@ export const PRODUCTS: CatalogueProduct[] = [
       "Data centers, telecom towers, and broadcasting facilities",
       "Pharmaceutical production and scientific research labs",
     ],
-    image: "/images/products/igbt-stabilizer.svg",
-    images: ["/images/products/igbt-stabilizer.svg"],
+    image: "/images/products/igbt.jpg",
+    images: ["/images/products/igbt.jpg"],
     datasheet: undefined,
     isActive: true,
     short_description: "State-of-the-art solid-state static voltage stabilizer utilizing Insulated Gate Bipolar Transistor (IGBT) PWM technology for microsecond-fast voltage correction.",
-    image_url: "/images/products/igbt-stabilizer.svg",
+    image_url: "/images/products/igbt.jpg",
     datasheet_url: undefined,
     is_active: true,
     key_highlights: [
@@ -318,12 +371,12 @@ export const PRODUCTS: CatalogueProduct[] = [
       "Commercial buildings, retail malls, and educational campuses",
       "Printing presses and mechanical fabrication workshops",
     ],
-    image: "/images/products/servo-stabilizer.svg",
-    images: ["/images/products/servo-stabilizer.svg"],
+    image: "/images/products/servo.jpg",
+    images: ["/images/products/servo.jpg"],
     datasheet: undefined,
     isActive: true,
     short_description: "Heavy-duty servo motor-controlled automatic voltage stabilizers delivering reliable line conditioning for industrial plants, factories, and commercial buildings.",
-    image_url: "/images/products/servo-stabilizer.svg",
+    image_url: "/images/products/servo.jpg",
     datasheet_url: undefined,
     is_active: true,
     key_highlights: [
@@ -367,12 +420,12 @@ export const PRODUCTS: CatalogueProduct[] = [
       "Marine dockside power and shipboard system simulation",
       "Defence and radar electronics test setups",
     ],
-    image: "/images/products/cvcf-systems.svg",
-    images: ["/images/products/cvcf-systems.svg"],
+    image: "/images/products/cvcf.jpg",
+    images: ["/images/products/cvcf.jpg"],
     datasheet: undefined,
     isActive: true,
     short_description: "Precision Constant Voltage Constant Frequency (CVCF) static frequency converters delivering stable 50Hz, 60Hz, or 400Hz clean sinusoidal power.",
-    image_url: "/images/products/cvcf-systems.svg",
+    image_url: "/images/products/cvcf.jpg",
     datasheet_url: undefined,
     is_active: true,
     key_highlights: [
@@ -416,12 +469,12 @@ export const PRODUCTS: CatalogueProduct[] = [
       "Hybrid operating theaters",
       "Digital subtraction angiography (DSA) installations",
     ],
-    image: "/images/products/cath-lab-ups.svg",
-    images: ["/images/products/cath-lab-ups.svg"],
+    image: undefined,
+    images: [],
     datasheet: undefined,
     isActive: true,
     short_description: "Ultra-high reliability medical UPS system specifically tailored for hospital Cath Labs, digital angiography, and fluoroscopic imaging suites.",
-    image_url: "/images/products/cath-lab-ups.svg",
+    image_url: undefined,
     datasheet_url: undefined,
     is_active: true,
     key_highlights: [
@@ -464,12 +517,12 @@ export const PRODUCTS: CatalogueProduct[] = [
       "Custom captive power generation & synchronization projects",
       "Heavy infrastructure and railway signaling systems",
     ],
-    image: "/images/products/custom-power-systems.svg",
-    images: ["/images/products/custom-power-systems.svg"],
+    image: undefined,
+    images: [],
     datasheet: undefined,
     isActive: true,
     short_description: "Custom-engineered power distribution, bespoke battery backup racks, outdoor weatherized enclosures, and specialized power conditioning solutions.",
-    image_url: "/images/products/custom-power-systems.svg",
+    image_url: undefined,
     datasheet_url: undefined,
     is_active: true,
     key_highlights: [

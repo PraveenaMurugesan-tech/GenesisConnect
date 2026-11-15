@@ -454,6 +454,61 @@ def test_contact_messages_unauthorized_access(client: TestClient):
     assert res3.status_code == 401
 
 
+def test_create_contact_message_with_company_alias(client: TestClient):
+    """Test submission with 'company' payload alias mapping to company_name."""
+    payload = {
+        "name": "K. Balasubramanian",
+        "company": "Kaveri Engineering Works",
+        "email": "bala@kaveriworks.com",
+        "phone": "+91 94440 22334",
+        "subject": "Industrial Online UPS Quote Inquiry",
+        "message": "Looking for 120 kVA double conversion UPS quote for factory unit.",
+    }
+    response = client.post("/api/v1/contact-messages", json=payload)
+    assert response.status_code == 201
+    data = response.json()
+    assert data["name"] == payload["name"]
+    assert data["company_name"] == "Kaveri Engineering Works"
+    assert data["company"] == "Kaveri Engineering Works"
+    assert data["status"] == "UNREAD"
+
+
+def test_admin_mark_contact_message_as_read(client: TestClient, admin_headers: dict):
+    """Test creating a contact message and admin updating its status to READ."""
+    create_res = client.post(
+        "/api/v1/contact-messages",
+        json={
+            "name": "Anand R",
+            "company": "Anand Diagnostics",
+            "email": "anand@ananddiagnostics.in",
+            "phone": "+91 98840 99887",
+            "subject": "CT Scanner Power Protection Inquiry",
+            "message": "Need urgent assessment for CT scanner pulsed load voltage dips.",
+        },
+    )
+    assert create_res.status_code == 201
+    msg_id = create_res.json()["id"]
+
+    # Verify admin can retrieve it
+    get_res = client.get(f"/api/v1/admin/contact-messages/{msg_id}", headers=admin_headers)
+    assert get_res.status_code == 200
+    assert get_res.json()["status"] == "UNREAD"
+
+    # Admin marks message as READ
+    patch_res = client.patch(
+        f"/api/v1/admin/contact-messages/{msg_id}/status",
+        headers=admin_headers,
+        json={"status": "READ"},
+    )
+    assert patch_res.status_code == 200
+    assert patch_res.json()["status"] == "READ"
+
+    # Confirm status persisted
+    verify_res = client.get(f"/api/v1/admin/contact-messages/{msg_id}", headers=admin_headers)
+    assert verify_res.status_code == 200
+    assert verify_res.json()["status"] == "READ"
+
+
 # ==============================================================================
 # 4. Admin Dashboard Metrics Integration
 # ==============================================================================

@@ -19,9 +19,19 @@ class Settings(BaseSettings):
     FRONTEND_URL: str = "http://localhost:5173"
     CORS_ORIGINS: Union[List[str], str] = [
         "http://localhost:5173",
-        "http://localhost:3000",
         "http://127.0.0.1:5173",
+        "http://localhost:5174",
+        "http://127.0.0.1:5174",
+        "http://localhost:5175",
+        "http://127.0.0.1:5175",
+        "http://localhost:4173",
+        "http://127.0.0.1:4173",
+        "http://localhost:3000",
         "http://127.0.0.1:3000",
+        "http://localhost:8000",
+        "http://127.0.0.1:8000",
+        "http://localhost:8080",
+        "http://127.0.0.1:8080",
     ]
 
     @field_validator("CORS_ORIGINS", mode="before")
@@ -31,15 +41,19 @@ class Settings(BaseSettings):
             v_stripped = v.strip()
             if v_stripped.startswith("[") and v_stripped.endswith("]"):
                 try:
-                    return json.loads(v_stripped)
+                    parsed = json.loads(v_stripped)
+                    if isinstance(parsed, list):
+                        return [str(i).strip().rstrip("/") for i in parsed if i]
                 except Exception:
                     pass
-            return [i.strip() for i in v.split(",") if i.strip()]
+            return [i.strip().rstrip("/") for i in v.split(",") if i.strip()]
+        elif isinstance(v, list):
+            return [str(i).strip().rstrip("/") for i in v if i]
         return v
 
     # PostgreSQL Database Connection
     DATABASE_URL: str = "postgresql://postgres:postgres@localhost:5432/genesisconnect"
-
+    
     # JWT Authentication (Phase 5)
     JWT_SECRET_KEY: str = "genesisconnect_development_secret_key_change_in_production_32bytes"
     JWT_ALGORITHM: str = "HS256"
@@ -90,7 +104,7 @@ class Settings(BaseSettings):
     LOCAL_STORAGE_PATH: str = "uploads"
     SUPABASE_STORAGE_BUCKET_PRODUCT_IMAGES: str = "product-images"
     SUPABASE_STORAGE_BUCKET_PRODUCT_DOCS: str = "product-datasheets"
-    SUPABASE_STORAGE_BUCKET_REQUIREMENTS: str = "requirement-documents"
+    SUPABASE_STORAGE_BUCKET_REQUIREMENTS: str = "genesis-enquiry-documents"
     SIGNED_URL_EXPIRATION_SECONDS: int = 3600
 
     # Storage Size Limits (in Megabytes)

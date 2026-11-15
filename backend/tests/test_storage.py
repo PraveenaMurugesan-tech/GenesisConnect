@@ -9,6 +9,7 @@ from fastapi.testclient import TestClient
 from app.services.storage import (
     storage_service,
     validate_upload,
+    normalize_document_filename,
     FileValidationError,
     FileSizeLimitExceededError,
     InvalidFileTypeError,
@@ -225,3 +226,117 @@ def test_signed_url_rejects_path_traversal(client: TestClient, admin_headers: di
     )
     assert response.status_code == 400
     assert "Path traversal" in response.json()["detail"]
+
+
+# ==============================================================================
+# 3. PDF Extension Normalization & Security Regression Tests
+# ==============================================================================
+def test_normalize_document_filename_variations():
+    """Ensure duplicate and case variations of PDF extensions are normalized."""
+    assert normalize_document_filename("requirement.pdf") == "requirement.pdf"
+    assert normalize_document_filename("requirement.pdf.pdf") == "requirement.pdf"
+    assert normalize_document_filename("technical-specification.PDF") == "technical-specification.pdf"
+    assert normalize_document_filename("genesis-test-requirement.pdf.pdf") == "genesis-test-requirement.pdf"
+    assert normalize_document_filename("genesis-test-requirement.pdf") == "genesis-test-requirement.pdf"
+    assert normalize_document_filename("spec.PDF.pdf") == "spec.pdf"
+    assert normalize_document_filename("spec.pdf.PDF") == "spec.pdf"
+    assert normalize_document_filename("single..line..diagram.pdf.pdf") == "single..line..diagram.pdf"
+    assert normalize_document_filename("multi.dot.name.pdf") == "multi.dot.name.pdf"
+    assert normalize_document_filename("multi.dot.name.pdf.pdf") == "multi.dot.name.pdf"
+    assert normalize_document_filename("no_extension") == "no_extension"
+    assert normalize_document_filename("") == "requirement.pdf"
+
+
+def test_validate_enquiry_document_duplicate_extension_normalized():
+    """Uploading requirement.pdf.pdf normalizes filename and produces valid storage key."""
+    storage_key, filename = validate_upload(
+        file_bytes=VALID_PDF_BYTES,
+        original_filename="requirement.pdf.pdf",
+        content_type="application/pdf",
+        upload_type="enquiry_document",
+    )
+    assert filename == "requirement.pdf"
+    assert storage_key.startswith("enquiries/documents/")
+    assert storage_key.endswith(".pdf")
+    assert not storage_key.endswith(".pdf.pdf")
+
+
+def test_validate_enquiry_document_uppercase_extension_normalized():
+    """Uploading technical-specification.PDF normalizes extension to .pdf."""
+    storage_key, filename = validate_upload(
+        file_bytes=VALID_PDF_BYTES,
+        original_filename="technical-specification.PDF",
+        content_type="application/pdf",
+        upload_type="enquiry_document",
+    )
+    assert filename == "technical-specification.pdf"
+    assert storage_key.startswith("enquiries/documents/")
+    assert storage_key.endswith(".pdf")
+
+
+def test_validate_enquiry_document_no_extension_rejected():
+    """Filenames without extensions are rejected under existing PDF validation rules."""
+    with pytest.raises(InvalidFileTypeError) as exc_info:
+        validate_upload(
+            file_bytes=VALID_PDF_BYTES,
+            original_filename="requirement",
+            content_type="application/pdf",
+            upload_type="enquiry_document",
+        )
+    assert "Invalid document extension ''" in str(exc_info.value)
+
+
+def test_validate_enquiry_document_invalid_extension_rejected():
+    """Non-PDF documents like Word docs or CAD files are rejected."""
+    with pytest.raises(InvalidFileTypeError) as exc_info:
+        validate_upload(
+            file_bytes=VALID_PDF_BYTES,
+            original_filename="specs.docx",
+            content_type="application/pdf",
+            upload_type="enquiry_document",
+        )
+    assert "Invalid document extension '.docx'" in str(exc_info.value)
+
+
+def test_validate_enquiry_document_dangerous_double_extension_rejected():
+    """Executable disguised with .pdf.exe is rejected by extension whitelist."""
+    with pytest.raises(InvalidFileTypeError):
+        validate_upload(
+            file_bytes=b"MZ\x90\x00\x03\x00\x00\x00",
+            original_filename="payload.pdf.exe",
+            content_type="application/octet-stream",
+            upload_type="enquiry_document",
+        )
+
+
+def test_public_upload_enquiry_document_duplicate_pdf_endpoint(client: TestClient):
+    """POST /storage/enquiry-document normalizes duplicate .pdf.pdf in response filename."""
+    response = client.post(
+        "/api/v1/storage/enquiry-document",
+        files={"file": ("genesis-test-requirement.pdf.pdf", io.BytesIO(VALID_PDF_BYTES), "application/pdf")},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "success"
+    assert data["filename"] == "genesis-test-requirement.pdf"
+    assert data["storage_key"].startswith("enquiries/documents/")
+    assert data["storage_key"].endswith(".pdf")
+    assert not data["storage_key"].endswith(".pdf.pdf")
+    assert data["bucket"] == settings.SUPABASE_STORAGE_BUCKET_REQUIREMENTS
+    assert "url" not in data
+
+
+def test_admin_upload_enquiry_document_duplicate_pdf_endpoint(client: TestClient, admin_headers: dict):
+    """POST /admin/storage/enquiry-document normalizes duplicate .pdf.pdf in response filename."""
+    response = client.post(
+        "/api/v1/admin/storage/enquiry-document",
+        headers=admin_headers,
+        files={"file": ("technical-specification.PDF", io.BytesIO(VALID_PDF_BYTES), "application/pdf")},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "success"
+    assert data["filename"] == "technical-specification.pdf"
+    assert data["storage_key"].startswith("enquiries/documents/")
+    assert data["storage_key"].endswith(".pdf")
+

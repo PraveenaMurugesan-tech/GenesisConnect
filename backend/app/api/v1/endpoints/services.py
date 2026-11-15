@@ -24,18 +24,29 @@ def get_services(
 
 
 @router.get("/{slug}", response_model=ServiceResponse)
+
 def get_service_by_slug(
     slug: str,
     db: Session = Depends(get_db),
 ) -> Any:
-    """Public endpoint to retrieve service details by slug."""
-    service = db.query(Service).filter(Service.slug == slug).first()
+    """Public endpoint to retrieve active service details by slug."""
+    service = (
+        db.query(Service)
+        .filter(
+            Service.slug == slug,
+            Service.is_active == True,
+        )
+        .first()
+    )
+
     if not service:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Service with slug '{slug}' not found",
         )
+
     return service
+
 
 
 @router.post("", response_model=ServiceResponse, status_code=status.HTTP_201_CREATED)

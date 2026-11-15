@@ -119,3 +119,165 @@ def test_product_response_schema_compatibility(client: TestClient):
     assert "isActive" in product
     assert "is_active" in product
     assert product["isActive"] == product["is_active"]
+
+
+def test_filter_products_by_genuine_company_categories(client: TestClient):
+    """GET /api/v1/products?category=... correctly filters for all 7 genuine company categories."""
+    category_slug_expectations = {
+        "Industrial Online UPS": "industrial-ups",
+        "Medical and CT Scanner UPS": "ct-scanner-ups",
+        "IGBT Static Voltage Stabilizers": "igbt-static-voltage-stabilizers",
+        "Servo Voltage Stabilizers": "servo-stabilizers",
+        "CVCF Frequency Converters": "cvcf-systems",
+        "Cath Lab UPS": "cath-laboratory-ups",
+        "Other Power Conditioning Equipment": "custom-specialized-power-systems",
+    }
+
+    for category, expected_slug in category_slug_expectations.items():
+        response = client.get(f"/api/v1/products?category={category}")
+        assert response.status_code == 200, f"Failed for category: {category}"
+        data = response.json()
+        assert len(data) >= 1, f"No products found for category: {category}"
+        slugs = [p["slug"] for p in data]
+        assert expected_slug in slugs, f"Expected slug {expected_slug} not in {slugs} for category {category}"
+
+
+def test_search_products_by_genuine_company_equipment_lines(client: TestClient):
+    """GET /api/v1/products?search=... finds products matching genuine company equipment terms."""
+    search_expectations = {
+        "Industrial Online UPS": "industrial-ups",
+        "Medical and CT Scanner UPS": "ct-scanner-ups",
+        "IGBT Static Voltage Stabilizers": "igbt-static-voltage-stabilizers",
+        "Servo Voltage Stabilizers": "servo-stabilizers",
+        "CVCF Frequency Converters": "cvcf-systems",
+        "Cath Lab UPS": "cath-laboratory-ups",
+        "Other Power Conditioning Equipment": "custom-specialized-power-systems",
+    }
+
+    for search_term, expected_slug in search_expectations.items():
+        response = client.get(f"/api/v1/products?search={search_term}")
+        assert response.status_code == 200, f"Search failed for: {search_term}"
+        data = response.json()
+        assert len(data) >= 1, f"No products found for search: {search_term}"
+        slugs = [p["slug"] for p in data]
+        assert expected_slug in slugs, f"Expected {expected_slug} in {slugs} for search '{search_term}'"
+
+
+def test_inactive_products_excluded_from_public_catalogue(client: TestClient, db_session):
+    """Inactive products in database must NOT be returned in public list or slug lookups."""
+    from app.models.product import Product
+
+    inactive_prod = Product(
+        name="Obsolete Generator Unit",
+        slug="obsolete-generator-unit",
+        category="Other",
+        description="Legacy decommissioned generator unit no longer supported.",
+        is_active=False,
+    )
+    db_session.add(inactive_prod)
+    db_session.commit()
+
+    # Verify not in public listing
+    response = client.get("/api/v1/products")
+    assert response.status_code == 200
+    slugs = [p["slug"] for p in response.json()]
+    assert "obsolete-generator-unit" not in slugs
+
+    # Verify 404 on direct slug lookup
+    lookup_response = client.get("/api/v1/products/obsolete-generator-unit")
+    assert lookup_response.status_code == 404
+
+
+def test_all_official_catalogue_slugs_accessible(client: TestClient):
+    """Verifies that all 9 official database slugs are directly fetchable."""
+    official_slugs = [
+        "ups-for-small-office",
+        "industrial-ups",
+        "ct-scanner-ups",
+        "emi-filter-ultrasound",
+        "igbt-static-voltage-stabilizers",
+        "servo-stabilizers",
+        "cvcf-systems",
+        "cath-laboratory-ups",
+        "custom-specialized-power-systems",
+    ]
+
+    for slug in official_slugs:
+        response = client.get(f"/api/v1/products/{slug}")
+        assert response.status_code == 200, f"Slug {slug} failed with status {response.status_code}"
+        data = response.json()
+        assert data["slug"] == slug
+        assert data["is_active"] is True
+        assert len(data["name"]) > 0
+        assert len(data["description"]) > 10
+        assert isinstance(data["specifications"], list)
+
+
+def test_product_image_paths_match_exact_approved_filenames(client: TestClient):
+    """
+    Verifies that all 7 products with dedicated assets return the exact approved filenames.
+    """
+    expected_images = {
+        "ups-for-small-office": "/images/products/small_ups.jpg",
+        "industrial-ups": "/images/products/industrialups.jpeg",
+        "ct-scanner-ups": "/images/products/ct_scanner.jpg",
+        "emi-filter-ultrasound": "/images/products/emi_filter.jpg",
+        "igbt-static-voltage-stabilizers": "/images/products/igbt.jpg",
+        "servo-stabilizers": "/images/products/servo.jpg",
+        "cvcf-systems": "/images/products/cvcf.jpg",
+    }
+
+    response = client.get("/api/v1/products")
+    assert response.status_code == 200
+    products_by_slug = {p["slug"]: p for p in response.json()}
+
+    for slug, expected_img in expected_images.items():
+        assert slug in products_by_slug, f"Missing product slug {slug}"
+        prod = products_by_slug[slug]
+        assert prod["image"] == expected_img, f"Product {slug} expected image {expected_img}, got {prod['image']}"
+        assert expected_img in prod["images"], f"Product {slug} expected {expected_img} in images {prod['images']}"
+
+
+def test_placeholder_products_have_no_invented_image_paths(client: TestClient):
+    """
+    Verifies that products lacking dedicated photography (Cath Lab UPS and Custom Systems)
+    do not invent fake file paths and return None/empty list.
+    """
+    placeholder_slugs = [
+        "cath-laboratory-ups",
+        "custom-specialized-power-systems",
+    ]
+
+    for slug in placeholder_slugs:
+        response = client.get(f"/api/v1/products/{slug}")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["image"] is None, f"Expected None image for {slug}, got {data['image']}"
+        assert data["images"] == [], f"Expected empty images for {slug}, got {data['images']}"
+
+
+def test_all_product_image_assets_exist_on_disk():
+    """
+    Verifies that every mapped public product image actually exists on disk in frontend/public.
+    """
+    import os
+
+    expected_files = [
+        "small_ups.jpg",
+        "industrialups.jpeg",
+        "ct_scanner.jpg",
+        "emi_filter.jpg",
+        "igbt.jpg",
+        "servo.jpg",
+        "cvcf.jpg",
+    ]
+    # Path relative to repository root from backend/
+    frontend_img_dir = os.path.abspath(
+        os.path.join(os.path.dirname(__file__), "..", "..", "frontend", "public", "images", "products")
+    )
+    assert os.path.isdir(frontend_img_dir), f"Directory {frontend_img_dir} does not exist"
+
+    for filename in expected_files:
+        filepath = os.path.join(frontend_img_dir, filename)
+        assert os.path.isfile(filepath), f"Image file missing on disk: {filepath}"
+        assert os.path.getsize(filepath) > 0, f"Image file is empty: {filepath}"

@@ -15,6 +15,13 @@ GENESIS_PRODUCT_CATEGORIES = [
     "Power Conditioning",
     "Medical Power Solutions",
     "Other",
+    "Industrial Online UPS",
+    "Medical and CT Scanner UPS",
+    "IGBT Static Voltage Stabilizers",
+    "Servo Voltage Stabilizers",
+    "CVCF Frequency Converters",
+    "Cath Lab UPS",
+    "Other Power Conditioning Equipment",
 ]
 
 

@@ -43,6 +43,7 @@ export interface CustomRequirementPayload {
 export interface ContactMessagePayload {
   name: string;
   company_name?: string;
+  company?: string;
   email: string;
   phone?: string;
   subject?: string;
@@ -71,7 +72,13 @@ export const submitCustomRequirement = async (payload: CustomRequirementPayload)
 };
 
 export const submitContactMessage = async (payload: ContactMessagePayload): Promise<ContactMessage> => {
-  const response = await apiClient.post<ContactMessage>("/contact-messages", payload);
+  const companyVal = payload.company || payload.company_name;
+  const normalizedPayload: ContactMessagePayload = {
+    ...payload,
+    company: companyVal,
+    company_name: companyVal,
+  };
+  const response = await apiClient.post<ContactMessage>("/contact-messages", normalizedPayload);
   return response.data;
 };
 
